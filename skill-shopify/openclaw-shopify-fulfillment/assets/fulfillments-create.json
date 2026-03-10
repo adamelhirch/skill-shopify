@@ -1,0 +1,38 @@
+{
+  "id": 123456,
+  "admin_graphql_api_id": "gid://shopify/Fulfillment/123456",
+  "order_id": 820982911946154508,
+  "status": "pending",
+  "tracking_company": "UPS",
+  "tracking_number": "1Z999AA10123456784",
+  "tracking_numbers": [
+    "1Z999AA10123456784"
+  ],
+  "tracking_url": "https://www.ups.com/track?loc=en_US&tracknum=1Z999AA10123456784",
+  "tracking_urls": [
+    "https://www.ups.com/track?loc=en_US&tracknum=1Z999AA10123456784"
+  ],
+  "email": "jon@example.com",
+  "destination": {
+    "first_name": "Steve",
+    "last_name": "Shipper",
+    "address1": "123 Shipping Street",
+    "phone": "555-555-SHIP",
+    "city": "Shippington",
+    "zip": "40003",
+    "province": "Kentucky",
+    "country": "United States",
+    "company": "Shipping Company",
+    "country_code": "US",
+    "province_code": "KY"
+  },
+  "line_items": [
+    {
+      "id": 487817672276298554,
+      "variant_id": 49148385,
+      "title": "Aviator sunglasses",
+      "quantity": 1,
+      "sku": "SKU2006-001"
+    }
+  ]
+}

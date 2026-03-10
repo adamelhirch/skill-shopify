@@ -1,0 +1,4 @@
+interface:
+  display_name: "Openclaw Shopify Fulfillment"
+  short_description: "Shopify webhook sync for Openclaw"
+  default_prompt: "Use $openclaw-shopify-fulfillment to implement a secure Shopify webhook and sync ready-to-ship orders into Openclaw."

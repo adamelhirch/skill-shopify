@@ -1,0 +1,32 @@
+{
+  "id": 820982911946154508,
+  "admin_graphql_api_id": "gid://shopify/Order/820982911946154508",
+  "name": "#1001",
+  "contact_email": "jon@example.com",
+  "currency": "USD",
+  "financial_status": "paid",
+  "display_fulfillment_status": "unfulfilled",
+  "shipping_address": {
+    "first_name": "Steve",
+    "last_name": "Shipper",
+    "address1": "123 Shipping Street",
+    "phone": "555-555-SHIP",
+    "city": "Shippington",
+    "zip": "40003",
+    "province": "Kentucky",
+    "country": "United States",
+    "company": "Shipping Company",
+    "country_code": "US",
+    "province_code": "KY"
+  },
+  "line_items": [
+    {
+      "id": 487817672276298554,
+      "variant_id": 49148385,
+      "title": "Aviator sunglasses",
+      "quantity": 1,
+      "sku": "SKU2006-001"
+    }
+  ],
+  "fulfillments": []
+}
