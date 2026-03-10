@@ -1,74 +1,146 @@
 ---
 name: openclaw-shopify-fulfillment
-description: Implement and maintain the Openclaw to Shopify fulfillment mirror integration. Use when Codex needs to connect Openclaw to Shopify, synchroniser des commandes pretes a expedier, add or update a Shopify webhook endpoint, verify Shopify HMAC signatures, parse orders or fulfillments payloads, fetch missing shipping data from the Shopify Admin API with read-only scopes, or map Shopify shipping data into Openclaw logistics records.
+description: Operate and evolve an Openclaw-managed Shopify store across fulfillment, catalog, SEO, content, navigation, reports, marketing, analytics, customer support, discounts, markets, files, theme work, and checkout branding. Use when Codex needs to read or update Shopify data, plan required access scopes, add webhooks, verify HMAC signatures, analyze store performance, generate SEO or marketing actions, modify content structures, manage products or inventory, or coordinate design and storefront changes from Openclaw.
 ---
 
-# Openclaw Shopify Fulfillment
+# Openclaw Shopify Operator
 
 ## Overview
 
-Implement the mirror strategy where Shopify stays the source of truth and Openclaw consumes ready-to-process logistics data.
-Keep the integration read-only on the Shopify side, acknowledge webhooks quickly, normalize payloads into an Openclaw envelope, and enrich missing data through the Admin API only when required.
+Use this skill when Openclaw is expected to operate Shopify as the store control plane, not just as a fulfillment mirror.
+Treat Shopify as the execution surface and Openclaw as the planner, operator, auditor, and reporting layer across commerce, growth, content, design, and support.
 
-## Core Workflow
+## Capability Routing
 
-1. Confirm runtime prerequisites.
-- Read `SHOPIFY_SHOP_DOMAIN`, `SHOPIFY_ACCESS_TOKEN`, `SHOPIFY_WEBHOOK_SECRET`, `SHOPIFY_API_VERSION`, and the Openclaw storage or queue settings from the target environment.
-- Refuse to hardcode tokens or secrets.
-- Keep Shopify access read-only unless the project explicitly expands scopes.
+Route every request into one primary capability before touching the API.
 
-2. Receive the webhook.
-- Expose a `POST` endpoint only.
-- Capture the raw request body before JSON parsing. Shopify HMAC verification must use the raw bytes.
-- Read at minimum `X-Shopify-Topic`, `X-Shopify-Hmac-Sha256`, `X-Shopify-Shop-Domain`, `X-Shopify-Webhook-Id`, and `X-Shopify-Event-Id`.
+### 1. Commerce Ops
 
-3. Verify authenticity first.
-- Validate `X-Shopify-Hmac-Sha256` with HMAC-SHA256 over the raw body and the shared secret.
-- Treat header names as case-insensitive.
-- Reject invalid signatures before JSON parsing or persistence.
+Use for orders, fulfillments, returns, shipping, stock, locations, and back-office workflows.
 
-4. Normalize the payload.
-- Use `orders/paid` as the early order signal.
-- Use `fulfillments/create` as the later shipment signal with tracking data.
-- Map the webhook into the Openclaw envelope described in [references/integration-contract.md](references/integration-contract.md).
-- Keep printable label URLs optional because the official standard webhook payloads expose tracking data more reliably than label documents.
+- Read and update orders only when the granted scopes allow it.
+- Keep webhook intake idempotent.
+- Preserve the original fulfillment mirror flow described in [references/integration-contract.md](references/integration-contract.md).
+- Use HMAC verification for inbound webhooks.
 
-5. Enrich only when necessary.
-- Prefer the GraphQL Admin API for new work.
-- Keep REST only as a fallback when the host project already depends on legacy REST endpoints.
-- Use read-only enrichment when shipping address fields, tracking fields, or other logistics data are missing from the webhook.
-- Read [references/shopify-api-notes.md](references/shopify-api-notes.md) before choosing webhook topics or fallback queries.
+### 2. Catalog Ops
 
-6. Persist and expose in Openclaw.
-- Store the raw webhook metadata separately from the normalized operational record.
-- Deduplicate event processing with `X-Shopify-Event-Id`.
-- Upsert the operator-facing record with a stable key built from shop domain, order id, and fulfillment id when present.
-- Show `print_label_url` only when a real URL exists. Otherwise store tracking URLs and mark the label as pending.
+Use for products, variants, collections, inventory, files, and product publishing.
 
-7. Acknowledge quickly and process asynchronously.
-- Return a 2xx response after the webhook is durably queued or stored.
-- Keep enrichment calls, PDF lookups, and heavy database fan-out out of the request path.
-- Assume duplicate delivery and out-of-order delivery are possible.
+- Prefer GraphQL Admin API for product and inventory work.
+- Use metafields and metaobjects when the host project needs structured catalog enrichment.
+- Preview bulk product updates before writing.
 
-## Delivery Rules
+### 3. SEO and Content
 
-- Prefer pure helpers for HMAC verification and payload normalization so they can be unit-tested outside the web framework.
-- Keep Openclaw as a consumer of Shopify events. Do not mutate orders, fulfillments, products, or themes unless the project requirements and scopes change.
-- Treat `orders/paid` as "payment succeeded", not as a universal guarantee that the order is ready to ship. If the project later needs the true Shopify fulfillment-order lifecycle, plan a scope review first.
-- Log topic, shop domain, webhook id, event id, order id, fulfillment id, and normalization outcome for every delivery.
-- Preserve the raw payload for audit and replay when a normalization bug is fixed.
+Use for pages, blog articles, redirects, navigation, metafields, metaobjects, locales, and translations.
+
+- Treat SEO changes as controlled publishing work, not ad hoc edits.
+- Generate titles, meta descriptions, structured content, redirects, and internal linking plans before mutating store content.
+- Persist content strategy in Openclaw so changes can be replayed and audited.
+
+### 4. Marketing and Analytics
+
+Use for reports, ShopifyQL, traffic analysis, discounts, pixels, customer events, and campaign attribution.
+
+- Do not claim a conversion rate without analytics scopes and source data.
+- Use `read_reports` before attempting ShopifyQL or traffic-based reporting.
+- Split reporting from campaign execution. Report first, mutate second.
+
+### 5. Design and Storefront
+
+Use for theme reads, theme updates, app embeds, checkout branding, media, and visual merchandising.
+
+- Prefer safe storefront patterns first: app blocks, theme app extensions, content updates, file changes, and branding settings.
+- Treat direct theme file writes as protected operations because Shopify can require extra approval for theme file APIs.
+- Always create a diff or preview before publishing visual changes.
+
+### 6. Customer and CRM
+
+Use for customer records, segmentation, customer support views, and lifecycle actions.
+
+- Respect protected customer data requirements.
+- Do not query customer names, emails, phones, or addresses unless the scopes and compliance posture explicitly allow it.
+- Minimize data access to the fields needed for the task.
+
+## Execution Model
+
+1. Identify the capability.
+2. Verify required scopes with [scripts/check_granted_scopes.py](scripts/check_granted_scopes.py).
+3. Prefer read-only discovery first.
+4. Generate a plan or diff for any meaningful write.
+5. Execute through GraphQL Admin API by default.
+6. Log the action, inputs, outputs, and rollback path in Openclaw.
+
+## Scope Rules
+
+- Refuse silent writes when scopes are missing or ambiguous.
+- Refuse analytics claims when traffic scopes are missing.
+- Refuse theme file mutation when the store lacks the needed permission or exemption path.
+- Refuse protected customer data access if the app does not have the required customer data scopes and approval posture.
+- Use [references/scopes.md](references/scopes.md) to map a task to the minimum viable scopes.
+
+## Protected Operations
+
+Require an explicit preview or change summary before execution for:
+
+- product bulk edits
+- inventory corrections
+- redirects and navigation changes
+- discount publication
+- pixel installation
+- market configuration
+- translations publication
+- theme writes
+- checkout branding writes
+
+For each of these, produce:
+
+- intended change
+- impacted resources
+- scopes required
+- rollback strategy
+
+## API Selection
+
+- Prefer GraphQL Admin API for new work.
+- Use REST only when the host codebase already relies on REST or the GraphQL equivalent is not yet wired in the project.
+- Use ShopifyQL only when `read_reports` is present.
+- Use webhooks for asynchronous store events and polling only when no event source exists.
+
+## Required Environment
+
+At minimum, read these from the runtime:
+
+- `SHOPIFY_SHOP_DOMAIN`
+- `SHOPIFY_ACCESS_TOKEN`
+- `SHOPIFY_API_VERSION`
+
+Use these when the capability needs them:
+
+- `SHOPIFY_WEBHOOK_SECRET`
+- `OPENCLAW_DB_DSN`
+- `OPENCLAW_QUEUE_NAME`
+- `OPENCLAW_AUDIT_SINK`
+- `OPENCLAW_MEDIA_BUCKET`
+
+Never hardcode secrets in source files, prompts, or fixtures.
 
 ## Resources
 
-- Use [scripts/verify_shopify_hmac.py](scripts/verify_shopify_hmac.py) to compute or verify Shopify webhook signatures from a raw payload file.
-- Use [scripts/normalize_shopify_webhook.py](scripts/normalize_shopify_webhook.py) to transform webhook payload fixtures into the Openclaw mirror envelope.
-- Read [references/integration-contract.md](references/integration-contract.md) for the normalized schema, idempotency keys, and storage rules.
-- Read [references/shopify-api-notes.md](references/shopify-api-notes.md) for the current Shopify webhook and Admin API guidance verified on 2026-03-10.
-- Use the JSON fixtures in `assets/` to smoke-test normalization changes before patching application code.
+- Read [references/scopes.md](references/scopes.md) before implementing or expanding access.
+- Read [references/capabilities.md](references/capabilities.md) to choose the right execution path.
+- Read [references/shopify-api-notes.md](references/shopify-api-notes.md) for current API constraints and protected operations.
+- Read [references/integration-contract.md](references/integration-contract.md) when the task still touches fulfillment intake.
+- Use [scripts/check_granted_scopes.py](scripts/check_granted_scopes.py) to compare granted scopes against capability bundles.
+- Use [scripts/verify_shopify_hmac.py](scripts/verify_shopify_hmac.py) for webhook authenticity checks.
+- Use [scripts/normalize_shopify_webhook.py](scripts/normalize_shopify_webhook.py) for fulfillment-mirror payload normalization.
 
 ## Example Requests
 
-- "Add a secure Shopify webhook endpoint to Openclaw and reject invalid HMAC signatures."
-- "Map `orders/paid` into our logistics queue without touching Shopify data."
-- "Parse `fulfillments/create` and surface carrier plus tracking URLs in Openclaw."
-- "Use the Shopify Admin API in read-only mode to fill missing shipping data after webhook intake."
+- "Récupère les 20 dernières commandes Shopify et dis-moi lesquelles ne sont pas expédiées."
+- "Analyse mon taux de conversion Shopify depuis le lancement et dis-moi quels scopes il manque."
+- "Prépare un plan SEO pour les pages produits et applique les metas si les scopes content sont présents."
+- "Crée un audit des permissions Shopify nécessaires pour que Openclaw gère marketing, design et catalogue."
+- "Prépare une mise à jour de navigation et de redirects avec preview avant publication."
+- "Modifie le branding checkout ou le thème seulement après avoir montré le diff."

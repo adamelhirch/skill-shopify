@@ -10,6 +10,9 @@ Verified against official Shopify documentation on 2026-03-10.
 - Shopify retries failed webhook deliveries up to 8 times over the next 4 hours.
 - Shopify recommends using `X-Shopify-Event-Id` to detect duplicate webhook events.
 - The REST Admin API has been legacy since 2024-10-01. New work should default to the GraphQL Admin API.
+- ShopifyQL and analytics reporting require `read_reports`.
+- Protected customer data access depends on explicit customer data scopes and Shopify approval posture.
+- Direct theme file mutation can require more than raw theme scopes depending on the API surface used.
 
 ## Topic Guidance For This Skill
 
@@ -35,6 +38,18 @@ Always capture and log:
 - Keep REST read-only fallbacks only when the target codebase already depends on legacy REST endpoints.
 - Use `X-Shopify-Access-Token` for authenticated Admin API requests.
 - Use the versioned endpoint shape `https://{shop_domain}/admin/api/{api_version}/graphql.json`.
+
+## Analytics Direction
+
+- Use ShopifyQL only when `read_reports` is present.
+- If `read_reports` is missing, present an order-performance report instead of a true conversion report.
+- Do not infer traffic or conversion from orders alone without clearly labeling the limitation.
+
+## Design Direction
+
+- Prefer low-risk storefront changes first: content updates, files, branding settings, app blocks, and app embeds.
+- Treat direct theme file writes as a protected operation with preview and rollback requirements.
+- Keep checkout branding separate from theme work because it uses its own permission surface.
 
 ## Example GraphQL Read Query
 
