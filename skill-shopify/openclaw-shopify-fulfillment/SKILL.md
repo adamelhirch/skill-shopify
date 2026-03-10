@@ -72,6 +72,27 @@ Use for customer records, segmentation, customer support views, and lifecycle ac
 5. Execute through GraphQL Admin API by default.
 6. Log the action, inputs, outputs, and rollback path in Openclaw.
 
+## OpenClaw Runtime
+
+At minimum, read these from the runtime:
+
+- `SHOPIFY_STORE_DOMAIN`
+- `SHOPIFY_CLIENT_ID`
+- `SHOPIFY_CLIENT_SECRET`
+- `SHOPIFY_API_VERSION`
+
+Use these when the capability needs them:
+
+- `SHOPIFY_SCOPE`
+- `SHOPIFY_WEBHOOK_SECRET`
+- `OPENCLAW_DB_DSN`
+- `OPENCLAW_QUEUE_NAME`
+- `OPENCLAW_AUDIT_SINK`
+- `OPENCLAW_MEDIA_BUCKET`
+
+Never hardcode secrets in source files, prompts, or fixtures.
+Use the Shopify client credentials grant to mint short-lived Admin API access tokens at runtime instead of storing a long-lived `SHOPIFY_ACCESS_TOKEN` in the environment.
+
 ## Scope Rules
 
 - Refuse silent writes when scopes are missing or ambiguous.
@@ -108,23 +129,52 @@ For each of these, produce:
 - Use ShopifyQL only when `read_reports` is present.
 - Use webhooks for asynchronous store events and polling only when no event source exists.
 
-## Required Environment
+## Deterministic Helpers
 
-At minimum, read these from the runtime:
+Use these helpers first before inventing ad hoc code:
 
-- `SHOPIFY_SHOP_DOMAIN`
-- `SHOPIFY_ACCESS_TOKEN`
-- `SHOPIFY_API_VERSION`
+- `scripts/check_granted_scopes.py` to compare granted scopes against capability bundles
+- `scripts/verify_shopify_hmac.py` for webhook authenticity checks
+- `scripts/normalize_shopify_webhook.py` for fulfillment-mirror payload normalization
+- `scripts/shopify_admin_ops.py` for deterministic Shopify Admin reads and writes in OpenClaw, with runtime token generation from `SHOPIFY_CLIENT_ID` and `SHOPIFY_CLIENT_SECRET`
 
-Use these when the capability needs them:
+### `shopify_admin_ops.py` command families
 
-- `SHOPIFY_WEBHOOK_SECRET`
-- `OPENCLAW_DB_DSN`
-- `OPENCLAW_QUEUE_NAME`
-- `OPENCLAW_AUDIT_SINK`
-- `OPENCLAW_MEDIA_BUCKET`
+- `context`
+- `ping`
+- `shop-info`
+- `orders-list`
+- `order-get`
+- `order-update`
+- `order-mark-paid`
+- `fulfillment-orders-for-order`
+- `fulfillment-create`
+- `products-search`
+- `products-by-sku`
+- `product-get`
+- `product-update`
+- `inventory-by-sku`
+- `inventory-adjust`
+- `customer-get`
+- `customer-update`
+- `graphql-query`
+- `graphql-mutation`
 
-Never hardcode secrets in source files, prompts, or fixtures.
+Execution patterns:
+
+```bash
+python scripts/check_granted_scopes.py --scopes "read_orders,write_orders,read_products" --capability commerce-ops
+python scripts/shopify_admin_ops.py context
+python scripts/shopify_admin_ops.py ping
+python scripts/shopify_admin_ops.py orders-list --query "financial_status:paid"
+python scripts/shopify_admin_ops.py order-get --order-name "#1004"
+python scripts/shopify_admin_ops.py order-update --order-name "#1004" --note "Traitee par VD Manager" --dry-run
+python scripts/shopify_admin_ops.py fulfillment-orders-for-order --order-name "#1004"
+python scripts/shopify_admin_ops.py fulfillment-create --input-json "{...}" --dry-run
+python scripts/shopify_admin_ops.py product-update --handle "vanille-12-gousses" --title "Vanille 12 gousses premium" --dry-run
+python scripts/shopify_admin_ops.py inventory-adjust --input-json "{...}" --dry-run
+python scripts/shopify_admin_ops.py graphql-mutation --query-file mutation.graphql --variables-json "{...}" --dry-run
+```
 
 ## Resources
 
@@ -132,9 +182,6 @@ Never hardcode secrets in source files, prompts, or fixtures.
 - Read [references/capabilities.md](references/capabilities.md) to choose the right execution path.
 - Read [references/shopify-api-notes.md](references/shopify-api-notes.md) for current API constraints and protected operations.
 - Read [references/integration-contract.md](references/integration-contract.md) when the task still touches fulfillment intake.
-- Use [scripts/check_granted_scopes.py](scripts/check_granted_scopes.py) to compare granted scopes against capability bundles.
-- Use [scripts/verify_shopify_hmac.py](scripts/verify_shopify_hmac.py) for webhook authenticity checks.
-- Use [scripts/normalize_shopify_webhook.py](scripts/normalize_shopify_webhook.py) for fulfillment-mirror payload normalization.
 
 ## Example Requests
 
