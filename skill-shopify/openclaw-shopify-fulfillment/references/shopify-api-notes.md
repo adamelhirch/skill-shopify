@@ -37,6 +37,7 @@ Always capture and log:
 - Prefer the GraphQL Admin API for new implementations.
 - Keep REST read-only fallbacks only when the target codebase already depends on legacy REST endpoints.
 - Use `X-Shopify-Access-Token` for authenticated Admin API requests.
+- For Dev Dashboard apps, mint the Admin API token with the client credentials grant and refresh it before the 24-hour expiry window.
 - Use the versioned endpoint shape `https://{shop_domain}/admin/api/{api_version}/graphql.json`.
 
 ## Analytics Direction

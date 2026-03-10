@@ -15,15 +15,44 @@ import sys
 from pathlib import Path
 
 
+def load_openclaw_env() -> dict[str, str]:
+    candidates = [
+        Path.cwd() / "openclaw.json",
+        Path(__file__).resolve().parents[4] / "openclaw.json",
+    ]
+    for candidate in candidates:
+        if not candidate.exists():
+            continue
+        try:
+            raw = json.loads(candidate.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            continue
+        vars_map = ((raw.get("env") or {}).get("vars") or {})
+        if isinstance(vars_map, dict):
+            return {key: str(value) for key, value in vars_map.items() if value is not None}
+    return {}
+
+
+OPENCLAW_ENV = load_openclaw_env()
+
+
+def env_value(name: str) -> str | None:
+    return os.getenv(name) or OPENCLAW_ENV.get(name)
+
+
 def load_secret(secret: str | None, secret_env: str | None) -> str:
     if secret:
         return secret
     if secret_env:
-        value = os.getenv(secret_env)
+        value = env_value(secret_env)
         if value:
             return value
         raise SystemExit(f"Environment variable not set or empty: {secret_env}")
-    raise SystemExit("Provide --secret or --secret-env.")
+    for default_name in ["SHOPIFY_WEBHOOK_SECRET", "SHOPIFY_CLIENT_SECRET"]:
+        value = env_value(default_name)
+        if value:
+            return value
+    raise SystemExit("Provide --secret or --secret-env, or configure SHOPIFY_WEBHOOK_SECRET / SHOPIFY_CLIENT_SECRET.")
 
 
 def compute_hmac(secret: str, payload: bytes) -> str:

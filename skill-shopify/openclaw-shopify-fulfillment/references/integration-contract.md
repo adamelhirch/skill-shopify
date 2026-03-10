@@ -7,8 +7,9 @@ Create one durable intake path for webhook deliveries and one normalized record 
 
 ## Runtime Inputs
 
-- `SHOPIFY_SHOP_DOMAIN`: Store domain such as `example.myshopify.com`
-- `SHOPIFY_ACCESS_TOKEN`: Read-only Admin API token
+- `SHOPIFY_STORE_DOMAIN`: Store domain such as `example.myshopify.com`
+- `SHOPIFY_CLIENT_ID`: App client id used to mint a short-lived Admin API token
+- `SHOPIFY_CLIENT_SECRET`: App client secret used to mint a short-lived Admin API token
 - `SHOPIFY_WEBHOOK_SECRET`: Shared secret used for HMAC verification
 - `SHOPIFY_API_VERSION`: Versioned Admin API path segment such as `2026-01`
 - `OPENCLAW_DB_DSN` or repository configuration: Destination for normalized records
