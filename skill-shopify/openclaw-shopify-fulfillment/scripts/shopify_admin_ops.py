@@ -337,6 +337,53 @@ def resolve_product_id(context: dict, product_id: str | None = None, handle: str
     return record["id"]
 
 
+def resolve_variant_id(
+    context: dict,
+    variant_id: str | None = None,
+    sku: str | None = None,
+    handle: str | None = None,
+) -> str:
+    if variant_id:
+        return as_gid("ProductVariant", variant_id)
+    if sku:
+        query = """
+        query VariantBySku($query: String!) {
+          productVariants(first: 5, query: $query) {
+            nodes {
+              id
+              title
+              sku
+              product {
+                title
+                handle
+              }
+            }
+          }
+        }
+        """
+        data = graph_ql(context, query, {"query": f"sku:{sku}"})
+        record = first_node(data["productVariants"]["nodes"], "variant")
+        return record["id"]
+    product_gid = resolve_product_id(context, handle=handle)
+    query = """
+    query FirstVariantByProduct($id: ID!) {
+      product(id: $id) {
+        id
+        title
+        variants(first: 1) {
+          nodes {
+            id
+            title
+          }
+        }
+      }
+    }
+    """
+    data = graph_ql(context, query, {"id": product_gid})
+    record = first_node(data["product"]["variants"]["nodes"], "variant")
+    return record["id"]
+
+
 def resolve_customer_id(context: dict, customer_id: str | None = None, email: str | None = None) -> str:
     if customer_id:
         return as_gid("Customer", customer_id)
@@ -751,6 +798,7 @@ def command_product_get(args: argparse.Namespace) -> None:
           product(id: $id) {
             id
             title
+            descriptionHtml
             handle
             status
             vendor
@@ -765,6 +813,23 @@ def command_product_get(args: argparse.Namespace) -> None:
                 inventoryQuantity
                 inventoryItem {
                   id
+                  tracked
+                  requiresShipping
+                  measurement {
+                    weight {
+                      value
+                      unit
+                    }
+                  }
+                }
+                metafields(first: 20, namespace: "openclaw_logistics") {
+                  nodes {
+                    id
+                    namespace
+                    key
+                    type
+                    value
+                  }
                 }
               }
             }
@@ -872,6 +937,229 @@ def command_inventory_adjust(args: argparse.Namespace) -> None:
         }
         """,
         {"input": input_payload},
+    )
+
+
+def command_variant_logistics_get(args: argparse.Namespace) -> None:
+    context = resolve_context(args)
+    variant_gid = resolve_variant_id(context, args.variant_id, args.sku, args.handle)
+    graphql_operation(
+        args,
+        """
+        query VariantLogisticsGet($id: ID!) {
+          productVariant(id: $id) {
+            id
+            title
+            sku
+            inventoryItem {
+              id
+              tracked
+              requiresShipping
+              measurement {
+                weight {
+                  value
+                  unit
+                }
+              }
+            }
+            product {
+              id
+              title
+              handle
+            }
+            metafields(first: 20, namespace: "openclaw_logistics") {
+              nodes {
+                id
+                namespace
+                key
+                type
+                value
+              }
+            }
+          }
+        }
+        """,
+        {"id": variant_gid},
+    )
+
+
+def command_variant_logistics_set(args: argparse.Namespace) -> None:
+    context = resolve_context(args)
+    variant_gid = resolve_variant_id(context, args.variant_id, args.sku, args.handle)
+    variant_data = graph_ql(
+        context,
+        """
+        query VariantLogisticsContext($id: ID!) {
+          productVariant(id: $id) {
+            id
+            title
+            inventoryItem {
+              id
+            }
+          }
+        }
+        """,
+        {"id": variant_gid},
+    )
+    variant = variant_data.get("productVariant")
+    if not variant:
+        fail("Variant not found")
+
+    if (
+        args.weight_kg is None
+        and args.net_weight_kg is None
+        and args.length_cm is None
+        and args.width_cm is None
+        and args.height_cm is None
+        and args.packaging_type is None
+    ):
+        fail("Provide at least one field to update")
+
+    if args.dry_run:
+        payload = {
+            "ok": True,
+            "mode": args.command,
+            "dry_run": True,
+            "variant_id": variant_gid,
+            "inventory_item_id": variant["inventoryItem"]["id"],
+            "updates": {
+                "weight_kg": args.weight_kg,
+                "net_weight_kg": args.net_weight_kg,
+                "length_cm": args.length_cm,
+                "width_cm": args.width_cm,
+                "height_cm": args.height_cm,
+                "packaging_type": args.packaging_type,
+            },
+        }
+        output(payload)
+        return
+
+    inventory_result = None
+    if args.weight_kg is not None:
+        inventory_result = graph_ql(
+            context,
+            """
+            mutation InventoryItemWeightUpdate($id: ID!, $input: InventoryItemInput!) {
+              inventoryItemUpdate(id: $id, input: $input) {
+                inventoryItem {
+                  id
+                  measurement {
+                    weight {
+                      value
+                      unit
+                    }
+                  }
+                }
+                userErrors {
+                  field
+                  message
+                }
+              }
+            }
+            """,
+            {
+                "id": variant["inventoryItem"]["id"],
+                "input": {
+                    "measurement": {
+                        "weight": {
+                            "value": args.weight_kg,
+                            "unit": "KILOGRAMS",
+                        }
+                    }
+                },
+            },
+        )
+
+    metafields = []
+    logistic_fields = [
+        ("packaging_type", "single_line_text_field", args.packaging_type),
+        ("net_weight_kg", "number_decimal", args.net_weight_kg),
+        ("parcel_length_cm", "number_decimal", args.length_cm),
+        ("parcel_width_cm", "number_decimal", args.width_cm),
+        ("parcel_height_cm", "number_decimal", args.height_cm),
+    ]
+    for key, type_name, value in logistic_fields:
+        if value is None:
+            continue
+        metafields.append(
+            {
+                "ownerId": variant_gid,
+                "namespace": "openclaw_logistics",
+                "key": key,
+                "type": type_name,
+                "value": str(value),
+            }
+        )
+
+    metafields_result = None
+    if metafields:
+        metafields_result = graph_ql(
+            context,
+            """
+            mutation VariantLogisticsMetafieldsSet($metafields: [MetafieldsSetInput!]!) {
+              metafieldsSet(metafields: $metafields) {
+                metafields {
+                  id
+                  namespace
+                  key
+                  type
+                  value
+                }
+                userErrors {
+                  field
+                  message
+                  code
+                }
+              }
+            }
+            """,
+            {"metafields": metafields},
+        )
+
+    refreshed = graph_ql(
+        context,
+        """
+        query VariantLogisticsGet($id: ID!) {
+          productVariant(id: $id) {
+            id
+            title
+            sku
+            inventoryItem {
+              id
+              measurement {
+                weight {
+                  value
+                  unit
+                }
+              }
+            }
+            product {
+              id
+              title
+              handle
+            }
+            metafields(first: 20, namespace: "openclaw_logistics") {
+              nodes {
+                key
+                type
+                value
+              }
+            }
+          }
+        }
+        """,
+        {"id": variant_gid},
+    )
+    output(
+        {
+            "ok": True,
+            "mode": args.command,
+            "variant_id": variant_gid,
+            "inventory_item_id": variant["inventoryItem"]["id"],
+            "inventory_result": inventory_result,
+            "metafields_result": metafields_result,
+            "data": refreshed,
+        }
     )
 
 
@@ -1027,11 +1315,13 @@ def main() -> None:
     products_search = subparsers.add_parser("products-search", help="Search products")
     products_search.add_argument("--query")
     products_search.add_argument("--first", type=int, default=20)
+    products_search.add_argument("--limit", dest="first", type=int)
     products_search.set_defaults(func=command_products_search)
 
     products_by_sku = subparsers.add_parser("products-by-sku", help="Read product variants by SKU")
     products_by_sku.add_argument("--sku", action="append", required=True)
     products_by_sku.add_argument("--first", type=int, default=20)
+    products_by_sku.add_argument("--limit", dest="first", type=int)
     products_by_sku.set_defaults(func=command_products_by_sku)
 
     product_get = subparsers.add_parser("product-get", help="Read one product by id, handle, or SKU")
@@ -1055,6 +1345,7 @@ def main() -> None:
     inventory_by_sku = subparsers.add_parser("inventory-by-sku", help="Read inventory by SKU")
     inventory_by_sku.add_argument("--sku", action="append", required=True)
     inventory_by_sku.add_argument("--first", type=int, default=20)
+    inventory_by_sku.add_argument("--limit", dest="first", type=int)
     inventory_by_sku.set_defaults(func=command_inventory_by_sku)
 
     inventory_adjust = subparsers.add_parser("inventory-adjust", help="Adjust inventory from a raw InventoryAdjustQuantitiesInput payload")
@@ -1062,11 +1353,31 @@ def main() -> None:
     add_write_flag(inventory_adjust)
     inventory_adjust.set_defaults(func=command_inventory_adjust)
 
+    variant_logistics_get = subparsers.add_parser("variant-logistics-get", help="Read weight and Openclaw logistics metafields for a variant")
+    variant_logistics_get.add_argument("--variant-id")
+    variant_logistics_get.add_argument("--sku")
+    variant_logistics_get.add_argument("--handle")
+    variant_logistics_get.set_defaults(func=command_variant_logistics_get)
+
+    variant_logistics_set = subparsers.add_parser("variant-logistics-set", help="Update variant shipping weight and Openclaw logistics metafields")
+    variant_logistics_set.add_argument("--variant-id")
+    variant_logistics_set.add_argument("--sku")
+    variant_logistics_set.add_argument("--handle")
+    variant_logistics_set.add_argument("--weight-kg", type=float)
+    variant_logistics_set.add_argument("--net-weight-kg", type=float)
+    variant_logistics_set.add_argument("--length-cm", type=float)
+    variant_logistics_set.add_argument("--width-cm", type=float)
+    variant_logistics_set.add_argument("--height-cm", type=float)
+    variant_logistics_set.add_argument("--packaging-type")
+    add_write_flag(variant_logistics_set)
+    variant_logistics_set.set_defaults(func=command_variant_logistics_set)
+
     customer_get = subparsers.add_parser("customer-get", help="Read a customer by id/email or search customers")
     customer_get.add_argument("--customer-id")
     customer_get.add_argument("--email")
     customer_get.add_argument("--query")
     customer_get.add_argument("--first", type=int, default=20)
+    customer_get.add_argument("--limit", dest="first", type=int)
     customer_get.set_defaults(func=command_customer_get)
 
     customer_update = subparsers.add_parser("customer-update", help="Update a customer from a raw CustomerInput payload")

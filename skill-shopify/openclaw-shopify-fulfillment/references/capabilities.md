@@ -19,6 +19,8 @@ Choose `catalog-ops`.
 - Prefer GraphQL bulk reads when the catalog is large.
 - Produce a diff before bulk writes.
 - Use files, metafields, and metaobjects for structured enrichment rather than overloading product descriptions.
+- For shipping normalization, set the native variant shipping weight first and store parcel dimensions in structured metafields.
+- Use [boxtal-packaging.md](boxtal-packaging.md) when you need repeatable parcel heuristics for spices, vanilla, tubes, jars, or flacons.
 
 ### Pages, blogs, redirects, menus, translations, locales
 

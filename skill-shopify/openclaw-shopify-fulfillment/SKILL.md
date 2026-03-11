@@ -10,6 +10,18 @@ description: Operate and evolve an Openclaw-managed Shopify store across fulfill
 Use this skill when Openclaw is expected to operate Shopify as the store control plane, not just as a fulfillment mirror.
 Treat Shopify as the execution surface and Openclaw as the planner, operator, auditor, and reporting layer across commerce, growth, content, design, and support.
 
+## Absolute Coverage Rule
+
+This skill is not limited to the small set of convenience commands already exposed by helper scripts.
+If Shopify grants access to a resource or mutation family, agents should assume the skill may operate that surface through raw GraphQL Admin API calls even when no dedicated wrapper command exists yet.
+
+Use this rule:
+
+- If a deterministic helper already exists, use it first.
+- If no helper exists but the granted scopes should allow the operation, fall back to `graphql-query` or `graphql-mutation`.
+- If the operation is high-risk, generate a preview or dry-run payload before execution.
+- If Shopify rejects the call, treat the rejection as the source of truth and report the exact missing permission or invalid field.
+
 ## Capability Routing
 
 Route every request into one primary capability before touching the API.
@@ -137,6 +149,26 @@ Use these helpers first before inventing ad hoc code:
 - `scripts/verify_shopify_hmac.py` for webhook authenticity checks
 - `scripts/normalize_shopify_webhook.py` for fulfillment-mirror payload normalization
 - `scripts/shopify_admin_ops.py` for deterministic Shopify Admin reads and writes in OpenClaw, with runtime token generation from `SHOPIFY_CLIENT_ID` and `SHOPIFY_CLIENT_SECRET`
+- `references/boxtal-packaging.md` for weight and parcel-dimension normalization rules used by Openclaw logistics and carrier-routing workflows
+
+## Tool Selection Rule
+
+Choose tools in this order:
+
+1. `check_granted_scopes.py`
+   Use before implementing or claiming a capability.
+
+2. Dedicated command in `shopify_admin_ops.py`
+   Use when a command already models the task cleanly.
+
+3. `graphql-query`
+   Use for any read that is supported by the granted scopes but does not have a dedicated wrapper.
+
+4. `graphql-mutation`
+   Use for any write that is supported by the granted scopes but does not have a dedicated wrapper.
+
+5. Custom patch to `shopify_admin_ops.py`
+   Add or fix the helper only when the operation is common, repetitive, or error-prone enough to justify a stable command.
 
 ### `shopify_admin_ops.py` command families
 
@@ -155,10 +187,15 @@ Use these helpers first before inventing ad hoc code:
 - `product-update`
 - `inventory-by-sku`
 - `inventory-adjust`
+- `variant-logistics-get`
+- `variant-logistics-set`
 - `customer-get`
 - `customer-update`
 - `graphql-query`
 - `graphql-mutation`
+
+These command families do not define the boundary of the skill. They are the stable wrappers currently implemented.
+The real boundary is: everything Shopify Admin API makes possible with the app's granted scopes, subject to protected-operation rules.
 
 Execution patterns:
 
@@ -182,6 +219,8 @@ python scripts/shopify_admin_ops.py graphql-mutation --query-file mutation.graph
 - Read [references/capabilities.md](references/capabilities.md) to choose the right execution path.
 - Read [references/shopify-api-notes.md](references/shopify-api-notes.md) for current API constraints and protected operations.
 - Read [references/integration-contract.md](references/integration-contract.md) when the task still touches fulfillment intake.
+- Read [references/surface-matrix.md](references/surface-matrix.md) to route tasks to dedicated commands versus raw GraphQL.
+- Read [references/boxtal-packaging.md](references/boxtal-packaging.md) when the task needs a shipping-weight estimate, package dimensions, or Boxtal-ready product normalization.
 
 ## Example Requests
 
@@ -191,3 +230,4 @@ python scripts/shopify_admin_ops.py graphql-mutation --query-file mutation.graph
 - "Crée un audit des permissions Shopify nécessaires pour que Openclaw gère marketing, design et catalogue."
 - "Prépare une mise à jour de navigation et de redirects avec preview avant publication."
 - "Modifie le branding checkout ou le thème seulement après avoir montré le diff."
+- "Si aucun helper n'existe pour cette tâche Shopify, utilise directement GraphQL si les scopes le permettent."
