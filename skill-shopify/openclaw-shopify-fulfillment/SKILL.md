@@ -149,7 +149,9 @@ Use these helpers first before inventing ad hoc code:
 - `scripts/verify_shopify_hmac.py` for webhook authenticity checks
 - `scripts/normalize_shopify_webhook.py` for fulfillment-mirror payload normalization
 - `scripts/shopify_admin_ops.py` for deterministic Shopify Admin reads and writes in OpenClaw, with runtime token generation from `SHOPIFY_CLIENT_ID` and `SHOPIFY_CLIENT_SECRET`
+- `scripts/plan_boxtal_shipment.py` to aggregate order weight and dimensions, choose a package, and build a Boxtal-ready shipment payload
 - `references/boxtal-packaging.md` for weight and parcel-dimension normalization rules used by Openclaw logistics and carrier-routing workflows
+- `references/boxtal-dispatch.md` for package-catalog planning, shipment aggregation, and label-creation prerequisites
 
 ## Tool Selection Rule
 
@@ -211,6 +213,7 @@ python scripts/shopify_admin_ops.py fulfillment-create --input-json "{...}" --dr
 python scripts/shopify_admin_ops.py product-update --handle "vanille-12-gousses" --title "Vanille 12 gousses premium" --dry-run
 python scripts/shopify_admin_ops.py inventory-adjust --input-json "{...}" --dry-run
 python scripts/shopify_admin_ops.py graphql-mutation --query-file mutation.graphql --variables-json "{...}" --dry-run
+python scripts/plan_boxtal_shipment.py --order-name "#1004" --packages-file assets/package-catalog.example.json
 ```
 
 ## Resources
@@ -221,6 +224,7 @@ python scripts/shopify_admin_ops.py graphql-mutation --query-file mutation.graph
 - Read [references/integration-contract.md](references/integration-contract.md) when the task still touches fulfillment intake.
 - Read [references/surface-matrix.md](references/surface-matrix.md) to route tasks to dedicated commands versus raw GraphQL.
 - Read [references/boxtal-packaging.md](references/boxtal-packaging.md) when the task needs a shipping-weight estimate, package dimensions, or Boxtal-ready product normalization.
+- Read [references/boxtal-dispatch.md](references/boxtal-dispatch.md) when the task needs package selection, order-level shipment planning, or automatic label-generation prerequisites.
 
 ## Example Requests
 
