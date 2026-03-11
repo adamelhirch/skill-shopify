@@ -1,12 +1,42 @@
 import argparse
 import json
-from pathlib import Path
 
 from shopify_admin_ops import fail, graph_ql, output, resolve_context, resolve_order_id
 
 
-DEFAULT_PACKAGE_FILE = Path(__file__).resolve().parents[1] / "assets" / "package-catalog.example.json"
 LOGISTICS_NAMESPACE = "openclaw_logistics"
+TEST_PACKAGES = [
+    {
+        "code": "flat_letter",
+        "label": "Enveloppe plate",
+        "inner_length_cm": 16.0,
+        "inner_width_cm": 11.0,
+        "inner_height_cm": 2.0,
+        "empty_weight_kg": 0.02,
+        "max_weight_kg": 0.25,
+        "enabled": True,
+    },
+    {
+        "code": "standard_box",
+        "label": "Boite standard",
+        "inner_length_cm": 22.0,
+        "inner_width_cm": 15.0,
+        "inner_height_cm": 8.0,
+        "empty_weight_kg": 0.08,
+        "max_weight_kg": 1.0,
+        "enabled": True,
+    },
+    {
+        "code": "tube_box",
+        "label": "Boite tube vanille",
+        "inner_length_cm": 25.0,
+        "inner_width_cm": 5.0,
+        "inner_height_cm": 5.0,
+        "empty_weight_kg": 0.05,
+        "max_weight_kg": 0.5,
+        "enabled": True,
+    },
+]
 
 
 def parse_args() -> argparse.Namespace:
@@ -20,14 +50,17 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--api-version")
     parser.add_argument("--order-id")
     parser.add_argument("--order-name")
-    parser.add_argument("--packages-file", default=str(DEFAULT_PACKAGE_FILE))
+    parser.add_argument("--packages-file")
     parser.add_argument("--dry-run", action="store_true")
     return parser.parse_args()
 
 
-def load_packages(path: str) -> list[dict]:
+def load_packages(path: str | None) -> tuple[list[dict], str]:
+    if not path:
+        return list(TEST_PACKAGES), "built-in test package constants"
     try:
-        payload = json.loads(Path(path).read_text(encoding="utf-8"))
+        with open(path, "r", encoding="utf-8") as handle:
+            payload = json.load(handle)
     except OSError as exc:
         fail(f"Could not read packages file: {exc}")
     except json.JSONDecodeError as exc:
@@ -44,7 +77,7 @@ def load_packages(path: str) -> list[dict]:
         valid.append(package)
     if not valid:
         fail("No enabled packages found in packages-file")
-    return valid
+    return valid, path
 
 
 def get_order(context: dict, order_gid: str) -> dict:
@@ -198,7 +231,7 @@ def main() -> None:
     args = parse_args()
     context = resolve_context(args)
     order_gid = resolve_order_id(context, args.order_id, args.order_name)
-    packages = load_packages(args.packages_file)
+    packages, package_source = load_packages(args.packages_file)
     order = get_order(context, order_gid)
 
     line_items = order.get("lineItems", {}).get("nodes", [])
@@ -305,7 +338,7 @@ def main() -> None:
                 "email": order.get("email"),
                 "shipping_address": order.get("shippingAddress"),
             },
-            "packages_file": str(Path(args.packages_file).resolve()),
+            "packages_source": package_source,
             "summary": {
                 "line_count": len(line_items),
                 "planned_line_count": len(planned_items),

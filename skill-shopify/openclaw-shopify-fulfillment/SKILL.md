@@ -150,8 +150,10 @@ Use these helpers first before inventing ad hoc code:
 - `scripts/normalize_shopify_webhook.py` for fulfillment-mirror payload normalization
 - `scripts/shopify_admin_ops.py` for deterministic Shopify Admin reads and writes in OpenClaw, with runtime token generation from `SHOPIFY_CLIENT_ID` and `SHOPIFY_CLIENT_SECRET`
 - `scripts/plan_boxtal_shipment.py` to aggregate order weight and dimensions, choose a package, and build a Boxtal-ready shipment payload
+- `scripts/sync_manual_shipping_rates.py` to keep manual Shopify checkout rates aligned with transport costs and margin rules when CCS is unavailable
 - `references/boxtal-packaging.md` for weight and parcel-dimension normalization rules used by Openclaw logistics and carrier-routing workflows
 - `references/boxtal-dispatch.md` for package-catalog planning, shipment aggregation, and label-creation prerequisites
+- `references/manual-rates-without-ccs.md` for transporter-by-country checkout strategy with manual rates
 
 ## Tool Selection Rule
 
@@ -214,6 +216,7 @@ python scripts/shopify_admin_ops.py product-update --handle "vanille-12-gousses"
 python scripts/shopify_admin_ops.py inventory-adjust --input-json "{...}" --dry-run
 python scripts/shopify_admin_ops.py graphql-mutation --query-file mutation.graphql --variables-json "{...}" --dry-run
 python scripts/plan_boxtal_shipment.py --order-name "#1004" --packages-file assets/package-catalog.example.json
+python scripts/sync_manual_shipping_rates.py --policy-file assets/manual-rate-policy.example.json --costs-file assets/boxtal-costs.example.json
 ```
 
 ## Resources
@@ -225,6 +228,7 @@ python scripts/plan_boxtal_shipment.py --order-name "#1004" --packages-file asse
 - Read [references/surface-matrix.md](references/surface-matrix.md) to route tasks to dedicated commands versus raw GraphQL.
 - Read [references/boxtal-packaging.md](references/boxtal-packaging.md) when the task needs a shipping-weight estimate, package dimensions, or Boxtal-ready product normalization.
 - Read [references/boxtal-dispatch.md](references/boxtal-dispatch.md) when the task needs package selection, order-level shipment planning, or automatic label-generation prerequisites.
+- Read [references/manual-rates-without-ccs.md](references/manual-rates-without-ccs.md) when checkout must expose transporter choices on a non-CCS plan.
 
 ## Example Requests
 

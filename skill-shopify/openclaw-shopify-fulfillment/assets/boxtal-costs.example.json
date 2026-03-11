@@ -1,0 +1,29 @@
+{
+  "costs": [
+    {
+      "zone_name": "France",
+      "service_code": "mr_relais_fr",
+      "cost": 4.15
+    },
+    {
+      "zone_name": "France",
+      "service_code": "colissimo_home_fr",
+      "cost": 5.95
+    },
+    {
+      "zone_name": "France",
+      "service_code": "chronopost_express_fr",
+      "cost": 8.75
+    },
+    {
+      "zone_name": "UE (Union Européenne)",
+      "service_code": "home_standard_eu",
+      "cost": 12.1
+    },
+    {
+      "zone_name": "International",
+      "service_code": "home_standard_world",
+      "cost": 18.9
+    }
+  ]
+}

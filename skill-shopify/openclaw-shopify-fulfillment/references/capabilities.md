@@ -11,6 +11,7 @@ Choose `commerce-ops`.
 - Read order and fulfillment state first.
 - Use background jobs for syncs, exports, and webhook-driven workflows.
 - Keep idempotency keys for every asynchronous event.
+- If CCS is not available, use manual service methods per zone and sync prices from cost plus margin with [manual-rates-without-ccs.md](manual-rates-without-ccs.md).
 
 ### Products, collections, inventory content, media
 

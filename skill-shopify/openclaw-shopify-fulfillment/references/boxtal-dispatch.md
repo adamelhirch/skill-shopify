@@ -61,6 +61,15 @@ If Boxtal is operated through CSV or spreadsheet import rather than API:
 - transform the `boxtal_ready_payload` into the exact import schema expected by the workspace
 - attach the generated file to the operator workflow
 
+### Mode B2: manual checkout rates without CCS
+
+If the store plan cannot expose live carrier rates:
+
+- keep one checkout method per transport service and zone
+- compute fixed prices from cost + margin
+- sync methods with `scripts/sync_manual_shipping_rates.py`
+- see [manual-rates-without-ccs.md](manual-rates-without-ccs.md)
+
 ### Mode C: API or browser execution
 
 If the business later provides a Boxtal API integration or an approved browser automation path:

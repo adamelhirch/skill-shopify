@@ -1,0 +1,74 @@
+{
+  "currency_code": "EUR",
+  "default_margin_percent": 18.0,
+  "default_margin_fixed": 0.5,
+  "default_min_price": 3.9,
+  "default_max_price": 29.0,
+  "zones": [
+    {
+      "zone_name": "France",
+      "services": [
+        {
+          "service_code": "mr_relais_fr",
+          "method_name": "Point relais Mondial Relay",
+          "base_cost": 4.2,
+          "margin_percent": 12.0,
+          "margin_fixed": 0.35,
+          "min_price": 3.9,
+          "max_price": 8.9,
+          "active": true
+        },
+        {
+          "service_code": "colissimo_home_fr",
+          "method_name": "Domicile Colissimo",
+          "base_cost": 6.1,
+          "margin_percent": 14.0,
+          "margin_fixed": 0.5,
+          "min_price": 5.9,
+          "max_price": 11.9,
+          "active": true
+        },
+        {
+          "service_code": "chronopost_express_fr",
+          "method_name": "Domicile Express Chronopost",
+          "base_cost": 8.8,
+          "margin_percent": 15.0,
+          "margin_fixed": 0.75,
+          "min_price": 8.9,
+          "max_price": 16.9,
+          "active": true
+        }
+      ]
+    },
+    {
+      "zone_name": "UE (Union Européenne)",
+      "services": [
+        {
+          "service_code": "home_standard_eu",
+          "method_name": "Domicile Standard UE",
+          "base_cost": 12.4,
+          "margin_percent": 16.0,
+          "margin_fixed": 0.9,
+          "min_price": 9.9,
+          "max_price": 24.9,
+          "active": true
+        }
+      ]
+    },
+    {
+      "zone_name": "International",
+      "services": [
+        {
+          "service_code": "home_standard_world",
+          "method_name": "Domicile Standard International",
+          "base_cost": 19.5,
+          "margin_percent": 20.0,
+          "margin_fixed": 1.5,
+          "min_price": 16.9,
+          "max_price": 39.9,
+          "active": true
+        }
+      ]
+    }
+  ]
+}
