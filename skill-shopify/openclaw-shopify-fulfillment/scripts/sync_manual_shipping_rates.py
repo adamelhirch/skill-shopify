@@ -124,7 +124,12 @@ def find_profile(profiles: list[dict], profile_id: str | None, profile_name: str
     fail(f"Profile not found by name: {profile_name}")
 
 
-def build_zone_updates(profile: dict, policy: dict, costs: dict[tuple[str, str], float], delete_unmanaged: bool) -> tuple[list[dict], list[dict]]:
+def build_zone_updates(
+    profile: dict,
+    policy: dict,
+    costs: dict[tuple[str, str], float],
+    delete_unmanaged: bool,
+) -> tuple[list[dict], list[dict], list[str]]:
     currency_code = str(policy.get("currency_code") or "EUR")
     default_margin_percent = float(policy.get("default_margin_percent", 0.0))
     default_margin_fixed = float(policy.get("default_margin_fixed", 0.0))
@@ -136,6 +141,7 @@ def build_zone_updates(profile: dict, policy: dict, costs: dict[tuple[str, str],
 
     report = []
     location_group_updates = []
+    method_ids_to_delete: list[str] = []
 
     for group in profile.get("profileLocationGroups", []):
         group_id = group.get("locationGroup", {}).get("id")
@@ -271,6 +277,7 @@ def build_zone_updates(profile: dict, policy: dict, costs: dict[tuple[str, str],
                     if method_name in managed_names:
                         continue
                     methods_to_delete.append(method.get("id"))
+                    method_ids_to_delete.append(method.get("id"))
                     service_report.append(
                         {
                             "service_code": None,
@@ -299,7 +306,7 @@ def build_zone_updates(profile: dict, policy: dict, costs: dict[tuple[str, str],
         if zone_updates:
             location_group_updates.append({"id": group_id, "zonesToUpdate": zone_updates})
 
-    return location_group_updates, report
+    return location_group_updates, report, method_ids_to_delete
 
 
 def run_update(context: dict, profile_id: str, profile_input: dict) -> dict:
@@ -331,7 +338,7 @@ def main() -> None:
     profiles = get_profiles(context)
     profile = find_profile(profiles, args.profile_id, args.profile_name)
 
-    location_group_updates, report = build_zone_updates(
+    location_group_updates, report, method_ids_to_delete = build_zone_updates(
         profile=profile,
         policy=policy,
         costs=cost_overrides,
@@ -341,6 +348,8 @@ def main() -> None:
     profile_input = {}
     if location_group_updates:
         profile_input["locationGroupsToUpdate"] = location_group_updates
+    if method_ids_to_delete:
+        profile_input["methodDefinitionsToDelete"] = method_ids_to_delete
 
     response = None
     if args.apply:
