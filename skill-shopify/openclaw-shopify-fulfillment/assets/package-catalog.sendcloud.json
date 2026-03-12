@@ -1,0 +1,14 @@
+{
+  "packages": [
+    {
+      "code": "sendcloud_default_20x15x5",
+      "label": "Sendcloud default parcel",
+      "inner_length_cm": 20.0,
+      "inner_width_cm": 15.0,
+      "inner_height_cm": 5.0,
+      "empty_weight_kg": 0.02,
+      "max_weight_kg": 1.0,
+      "enabled": true
+    }
+  ]
+}

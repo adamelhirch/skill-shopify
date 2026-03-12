@@ -1,0 +1,1087 @@
+{
+  "currency_code": "EUR",
+  "default_margin_percent": 0.0,
+  "default_margin_fixed": 0.0,
+  "default_min_price": 0.0,
+  "default_max_price": 999.0,
+  "delete_unmanaged": true,
+  "features": {
+    "pickup_point_checkout": false,
+    "checkout_dynamic_rates": false,
+    "live_carrier_quote_in_checkout": false
+  },
+  "active_colis_type": "M",
+  "colis_types": {
+    "S": {
+      "label": "Petit colis",
+      "max_weight_kg": 0.35,
+      "length_cm": 18,
+      "width_cm": 12,
+      "height_cm": 4
+    },
+    "M": {
+      "label": "Colis moyen",
+      "max_weight_kg": 1.0,
+      "length_cm": 22,
+      "width_cm": 16,
+      "height_cm": 8
+    },
+    "L": {
+      "label": "Grand colis",
+      "max_weight_kg": 3.0,
+      "length_cm": 32,
+      "width_cm": 24,
+      "height_cm": 12
+    }
+  },
+  "profiles": [
+    {
+      "profile_name": "Openclaw Shipping",
+      "create_if_missing": true,
+      "delete_unmanaged": true,
+      "zones": [
+        {
+          "zone_name": "France",
+          "country_codes": [
+            "FR"
+          ],
+          "services": [
+            {
+              "method_name": "Livraison en Point Relais",
+              "description": "Choisissez votre point relais apres paiement",
+              "base_cost": 3.31,
+              "min_price": 3.9,
+              "max_price": 3.9,
+              "carrier_name": "Openclaw Routed",
+              "carrier_service_name": "France relay dynamic",
+              "carrier_service_code": "FR_RELAY_DYNAMIC",
+              "active": true
+            },
+            {
+              "method_name": "Livraison \u00e0 domicile",
+              "description": "2 a 5 jours via Mondial Relay ou Colissimo",
+              "base_cost": 7.67,
+              "min_price": 7.49,
+              "max_price": 7.49,
+              "carrier_name": "Openclaw Routed",
+              "carrier_service_name": "France home blended dynamic",
+              "carrier_service_code": "FR_HOME_DYNAMIC",
+              "active": true
+            }
+          ]
+        },
+        {
+          "zone_name": "INT DOM 7.90 RELAIS 3.49",
+          "country_codes": [
+            "MC"
+          ],
+          "services": [
+            {
+              "method_name": "Livraison \u00e0 domicile",
+              "description": "Delais variables selon destination",
+              "base_cost": 7.67,
+              "min_price": 7.9,
+              "max_price": 7.9,
+              "carrier_name": "Openclaw Routed",
+              "carrier_service_name": "Livraison \u00e0 domicile",
+              "carrier_service_code": "INT_DOM_7.90",
+              "active": true
+            },
+            {
+              "method_name": "Livraison en Point Relais",
+              "description": "Choisissez votre point relais apres paiement",
+              "base_cost": 3.29,
+              "min_price": 3.49,
+              "max_price": 3.49,
+              "carrier_name": "Openclaw Routed",
+              "carrier_service_name": "Livraison en Point Relais",
+              "carrier_service_code": "INT_RELAY_3.49",
+              "active": true
+            }
+          ]
+        },
+        {
+          "zone_name": "INT DOM 7.90 RELAIS 5.90",
+          "country_codes": [
+            "AD"
+          ],
+          "services": [
+            {
+              "method_name": "Livraison \u00e0 domicile",
+              "description": "Delais variables selon destination",
+              "base_cost": 7.67,
+              "min_price": 7.9,
+              "max_price": 7.9,
+              "carrier_name": "Openclaw Routed",
+              "carrier_service_name": "Livraison \u00e0 domicile",
+              "carrier_service_code": "INT_DOM_7.90",
+              "active": true
+            },
+            {
+              "method_name": "Livraison en Point Relais",
+              "description": "Choisissez votre point relais apres paiement",
+              "base_cost": 5.84,
+              "min_price": 5.9,
+              "max_price": 5.9,
+              "carrier_name": "Openclaw Routed",
+              "carrier_service_name": "Livraison en Point Relais",
+              "carrier_service_code": "INT_RELAY_5.90",
+              "active": true
+            }
+          ]
+        },
+        {
+          "zone_name": "INT DOM 8.90 RELAIS 3.90",
+          "country_codes": [
+            "BE"
+          ],
+          "services": [
+            {
+              "method_name": "Livraison \u00e0 domicile",
+              "description": "Delais variables selon destination",
+              "base_cost": 8.95,
+              "min_price": 8.9,
+              "max_price": 8.9,
+              "carrier_name": "Openclaw Routed",
+              "carrier_service_name": "Livraison \u00e0 domicile",
+              "carrier_service_code": "INT_DOM_8.90",
+              "active": true
+            },
+            {
+              "method_name": "Livraison en Point Relais",
+              "description": "Choisissez votre point relais apres paiement",
+              "base_cost": 4.15,
+              "min_price": 3.9,
+              "max_price": 3.9,
+              "carrier_name": "Openclaw Routed",
+              "carrier_service_name": "Livraison en Point Relais",
+              "carrier_service_code": "INT_RELAY_3.90",
+              "active": true
+            }
+          ]
+        },
+        {
+          "zone_name": "INT DOM 8.90 RELAIS 4.90",
+          "country_codes": [
+            "DE",
+            "LU",
+            "NL"
+          ],
+          "services": [
+            {
+              "method_name": "Livraison \u00e0 domicile",
+              "description": "Delais variables selon destination",
+              "base_cost": 8.95,
+              "min_price": 8.9,
+              "max_price": 8.9,
+              "carrier_name": "Openclaw Routed",
+              "carrier_service_name": "Livraison \u00e0 domicile",
+              "carrier_service_code": "INT_DOM_8.90",
+              "active": true
+            },
+            {
+              "method_name": "Livraison en Point Relais",
+              "description": "Choisissez votre point relais apres paiement",
+              "base_cost": 4.96,
+              "min_price": 4.9,
+              "max_price": 4.9,
+              "carrier_name": "Openclaw Routed",
+              "carrier_service_name": "Livraison en Point Relais",
+              "carrier_service_code": "INT_RELAY_4.90",
+              "active": true
+            }
+          ]
+        },
+        {
+          "zone_name": "INT DOM 9.90",
+          "country_codes": [
+            "GI"
+          ],
+          "services": [
+            {
+              "method_name": "Livraison \u00e0 domicile",
+              "description": "Delais variables selon destination",
+              "base_cost": 9.76,
+              "min_price": 9.9,
+              "max_price": 9.9,
+              "carrier_name": "Openclaw Routed",
+              "carrier_service_name": "Livraison \u00e0 domicile",
+              "carrier_service_code": "INT_DOM_9.90",
+              "active": true
+            }
+          ]
+        },
+        {
+          "zone_name": "INT DOM 9.90 RELAIS 5.90",
+          "country_codes": [
+            "ES"
+          ],
+          "services": [
+            {
+              "method_name": "Livraison \u00e0 domicile",
+              "description": "Delais variables selon destination",
+              "base_cost": 9.76,
+              "min_price": 9.9,
+              "max_price": 9.9,
+              "carrier_name": "Openclaw Routed",
+              "carrier_service_name": "Livraison \u00e0 domicile",
+              "carrier_service_code": "INT_DOM_9.90",
+              "active": true
+            },
+            {
+              "method_name": "Livraison en Point Relais",
+              "description": "Choisissez votre point relais apres paiement",
+              "base_cost": 6.0,
+              "min_price": 5.9,
+              "max_price": 5.9,
+              "carrier_name": "Openclaw Routed",
+              "carrier_service_name": "Livraison en Point Relais",
+              "carrier_service_code": "INT_RELAY_5.90",
+              "active": true
+            }
+          ]
+        },
+        {
+          "zone_name": "INT DOM 9.90 RELAIS 6.49",
+          "country_codes": [
+            "IT"
+          ],
+          "services": [
+            {
+              "method_name": "Livraison \u00e0 domicile",
+              "description": "Delais variables selon destination",
+              "base_cost": 9.76,
+              "min_price": 9.9,
+              "max_price": 9.9,
+              "carrier_name": "Openclaw Routed",
+              "carrier_service_name": "Livraison \u00e0 domicile",
+              "carrier_service_code": "INT_DOM_9.90",
+              "active": true
+            },
+            {
+              "method_name": "Livraison en Point Relais",
+              "description": "Choisissez votre point relais apres paiement",
+              "base_cost": 6.21,
+              "min_price": 6.49,
+              "max_price": 6.49,
+              "carrier_name": "Openclaw Routed",
+              "carrier_service_name": "Livraison en Point Relais",
+              "carrier_service_code": "INT_RELAY_6.49",
+              "active": true
+            }
+          ]
+        },
+        {
+          "zone_name": "INT DOM 10.90 RELAIS 5.90",
+          "country_codes": [
+            "PT"
+          ],
+          "services": [
+            {
+              "method_name": "Livraison \u00e0 domicile",
+              "description": "Delais variables selon destination",
+              "base_cost": 11.1,
+              "min_price": 10.9,
+              "max_price": 10.9,
+              "carrier_name": "Openclaw Routed",
+              "carrier_service_name": "Livraison \u00e0 domicile",
+              "carrier_service_code": "INT_DOM_10.90",
+              "active": true
+            },
+            {
+              "method_name": "Livraison en Point Relais",
+              "description": "Choisissez votre point relais apres paiement",
+              "base_cost": 6.0,
+              "min_price": 5.9,
+              "max_price": 5.9,
+              "carrier_name": "Openclaw Routed",
+              "carrier_service_name": "Livraison en Point Relais",
+              "carrier_service_code": "INT_RELAY_5.90",
+              "active": true
+            }
+          ]
+        },
+        {
+          "zone_name": "INT DOM 10.90 RELAIS 6.49",
+          "country_codes": [
+            "AT"
+          ],
+          "services": [
+            {
+              "method_name": "Livraison \u00e0 domicile",
+              "description": "Delais variables selon destination",
+              "base_cost": 11.1,
+              "min_price": 10.9,
+              "max_price": 10.9,
+              "carrier_name": "Openclaw Routed",
+              "carrier_service_name": "Livraison \u00e0 domicile",
+              "carrier_service_code": "INT_DOM_10.90",
+              "active": true
+            },
+            {
+              "method_name": "Livraison en Point Relais",
+              "description": "Choisissez votre point relais apres paiement",
+              "base_cost": 6.21,
+              "min_price": 6.49,
+              "max_price": 6.49,
+              "carrier_name": "Openclaw Routed",
+              "carrier_service_name": "Livraison en Point Relais",
+              "carrier_service_code": "INT_RELAY_6.49",
+              "active": true
+            }
+          ]
+        },
+        {
+          "zone_name": "INT DOM 10.90 RELAIS 8.90",
+          "country_codes": [
+            "PL"
+          ],
+          "services": [
+            {
+              "method_name": "Livraison \u00e0 domicile",
+              "description": "Delais variables selon destination",
+              "base_cost": 11.1,
+              "min_price": 10.9,
+              "max_price": 10.9,
+              "carrier_name": "Openclaw Routed",
+              "carrier_service_name": "Livraison \u00e0 domicile",
+              "carrier_service_code": "INT_DOM_10.90",
+              "active": true
+            },
+            {
+              "method_name": "Livraison en Point Relais",
+              "description": "Choisissez votre point relais apres paiement",
+              "base_cost": 8.67,
+              "min_price": 8.9,
+              "max_price": 8.9,
+              "carrier_name": "Openclaw Routed",
+              "carrier_service_name": "Livraison en Point Relais",
+              "carrier_service_code": "INT_RELAY_8.90",
+              "active": true
+            }
+          ]
+        },
+        {
+          "zone_name": "INT DOM 10.90 RELAIS 9.90",
+          "country_codes": [
+            "DK",
+            "IE"
+          ],
+          "services": [
+            {
+              "method_name": "Livraison \u00e0 domicile",
+              "description": "Delais variables selon destination",
+              "base_cost": 11.1,
+              "min_price": 10.9,
+              "max_price": 10.9,
+              "carrier_name": "Openclaw Routed",
+              "carrier_service_name": "Livraison \u00e0 domicile",
+              "carrier_service_code": "INT_DOM_10.90",
+              "active": true
+            },
+            {
+              "method_name": "Livraison en Point Relais",
+              "description": "Choisissez votre point relais apres paiement",
+              "base_cost": 9.9,
+              "min_price": 9.9,
+              "max_price": 9.9,
+              "carrier_name": "Openclaw Routed",
+              "carrier_service_name": "Livraison en Point Relais",
+              "carrier_service_code": "INT_RELAY_9.90",
+              "active": true
+            }
+          ]
+        },
+        {
+          "zone_name": "INT DOM 10.90 RELAIS 10.90",
+          "country_codes": [
+            "SE"
+          ],
+          "services": [
+            {
+              "method_name": "Livraison \u00e0 domicile",
+              "description": "Delais variables selon destination",
+              "base_cost": 11.1,
+              "min_price": 10.9,
+              "max_price": 10.9,
+              "carrier_name": "Openclaw Routed",
+              "carrier_service_name": "Livraison \u00e0 domicile",
+              "carrier_service_code": "INT_DOM_10.90",
+              "active": true
+            },
+            {
+              "method_name": "Livraison en Point Relais",
+              "description": "Choisissez votre point relais apres paiement",
+              "base_cost": 10.88,
+              "min_price": 10.9,
+              "max_price": 10.9,
+              "carrier_name": "Openclaw Routed",
+              "carrier_service_name": "Livraison en Point Relais",
+              "carrier_service_code": "INT_RELAY_10.90",
+              "active": true
+            }
+          ]
+        },
+        {
+          "zone_name": "INT DOM 10.90 RELAIS 13.49",
+          "country_codes": [
+            "FI"
+          ],
+          "services": [
+            {
+              "method_name": "Livraison \u00e0 domicile",
+              "description": "Delais variables selon destination",
+              "base_cost": 11.1,
+              "min_price": 10.9,
+              "max_price": 10.9,
+              "carrier_name": "Openclaw Routed",
+              "carrier_service_name": "Livraison \u00e0 domicile",
+              "carrier_service_code": "INT_DOM_10.90",
+              "active": true
+            },
+            {
+              "method_name": "Livraison en Point Relais",
+              "description": "Choisissez votre point relais apres paiement",
+              "base_cost": 13.72,
+              "min_price": 13.49,
+              "max_price": 13.49,
+              "carrier_name": "Openclaw Routed",
+              "carrier_service_name": "Livraison en Point Relais",
+              "carrier_service_code": "INT_RELAY_13.49",
+              "active": true
+            }
+          ]
+        },
+        {
+          "zone_name": "INT DOM 11.90",
+          "country_codes": [
+            "GB",
+            "GG",
+            "IM",
+            "JE",
+            "SM",
+            "VA"
+          ],
+          "services": [
+            {
+              "method_name": "Livraison \u00e0 domicile",
+              "description": "Delais variables selon destination",
+              "base_cost": 12.13,
+              "min_price": 11.9,
+              "max_price": 11.9,
+              "carrier_name": "Openclaw Routed",
+              "carrier_service_name": "Livraison \u00e0 domicile",
+              "carrier_service_code": "INT_DOM_11.90",
+              "active": true
+            }
+          ]
+        },
+        {
+          "zone_name": "INT DOM 12.90",
+          "country_codes": [
+            "CH"
+          ],
+          "services": [
+            {
+              "method_name": "Livraison \u00e0 domicile",
+              "description": "Delais variables selon destination",
+              "base_cost": 12.86,
+              "min_price": 12.9,
+              "max_price": 12.9,
+              "carrier_name": "Openclaw Routed",
+              "carrier_service_name": "Livraison \u00e0 domicile",
+              "carrier_service_code": "INT_DOM_12.90",
+              "active": true
+            }
+          ]
+        },
+        {
+          "zone_name": "INT DOM 13.49",
+          "country_codes": [
+            "FO",
+            "GL",
+            "LI"
+          ],
+          "services": [
+            {
+              "method_name": "Livraison \u00e0 domicile",
+              "description": "Delais variables selon destination",
+              "base_cost": 13.48,
+              "min_price": 13.49,
+              "max_price": 13.49,
+              "carrier_name": "Openclaw Routed",
+              "carrier_service_name": "Livraison \u00e0 domicile",
+              "carrier_service_code": "INT_DOM_13.49",
+              "active": true
+            }
+          ]
+        },
+        {
+          "zone_name": "INT DOM 13.49 RELAIS 8.90",
+          "country_codes": [
+            "CZ",
+            "HU"
+          ],
+          "services": [
+            {
+              "method_name": "Livraison \u00e0 domicile",
+              "description": "Delais variables selon destination",
+              "base_cost": 13.48,
+              "min_price": 13.49,
+              "max_price": 13.49,
+              "carrier_name": "Openclaw Routed",
+              "carrier_service_name": "Livraison \u00e0 domicile",
+              "carrier_service_code": "INT_DOM_13.49",
+              "active": true
+            },
+            {
+              "method_name": "Livraison en Point Relais",
+              "description": "Choisissez votre point relais apres paiement",
+              "base_cost": 8.67,
+              "min_price": 8.9,
+              "max_price": 8.9,
+              "carrier_name": "Openclaw Routed",
+              "carrier_service_name": "Livraison en Point Relais",
+              "carrier_service_code": "INT_RELAY_8.90",
+              "active": true
+            }
+          ]
+        },
+        {
+          "zone_name": "INT DOM 13.49 RELAIS 9.90",
+          "country_codes": [
+            "SI",
+            "SK"
+          ],
+          "services": [
+            {
+              "method_name": "Livraison \u00e0 domicile",
+              "description": "Delais variables selon destination",
+              "base_cost": 13.48,
+              "min_price": 13.49,
+              "max_price": 13.49,
+              "carrier_name": "Openclaw Routed",
+              "carrier_service_name": "Livraison \u00e0 domicile",
+              "carrier_service_code": "INT_DOM_13.49",
+              "active": true
+            },
+            {
+              "method_name": "Livraison en Point Relais",
+              "description": "Choisissez votre point relais apres paiement",
+              "base_cost": 9.9,
+              "min_price": 9.9,
+              "max_price": 9.9,
+              "carrier_name": "Openclaw Routed",
+              "carrier_service_name": "Livraison en Point Relais",
+              "carrier_service_code": "INT_RELAY_9.90",
+              "active": true
+            }
+          ]
+        },
+        {
+          "zone_name": "INT DOM 13.49 RELAIS 10.90",
+          "country_codes": [
+            "LT"
+          ],
+          "services": [
+            {
+              "method_name": "Livraison \u00e0 domicile",
+              "description": "Delais variables selon destination",
+              "base_cost": 13.48,
+              "min_price": 13.49,
+              "max_price": 13.49,
+              "carrier_name": "Openclaw Routed",
+              "carrier_service_name": "Livraison \u00e0 domicile",
+              "carrier_service_code": "INT_DOM_13.49",
+              "active": true
+            },
+            {
+              "method_name": "Livraison en Point Relais",
+              "description": "Choisissez votre point relais apres paiement",
+              "base_cost": 10.88,
+              "min_price": 10.9,
+              "max_price": 10.9,
+              "carrier_name": "Openclaw Routed",
+              "carrier_service_name": "Livraison en Point Relais",
+              "carrier_service_code": "INT_RELAY_10.90",
+              "active": true
+            }
+          ]
+        },
+        {
+          "zone_name": "INT DOM 13.49 RELAIS 11.49",
+          "country_codes": [
+            "EE",
+            "LV"
+          ],
+          "services": [
+            {
+              "method_name": "Livraison \u00e0 domicile",
+              "description": "Delais variables selon destination",
+              "base_cost": 13.48,
+              "min_price": 13.49,
+              "max_price": 13.49,
+              "carrier_name": "Openclaw Routed",
+              "carrier_service_name": "Livraison \u00e0 domicile",
+              "carrier_service_code": "INT_DOM_13.49",
+              "active": true
+            },
+            {
+              "method_name": "Livraison en Point Relais",
+              "description": "Choisissez votre point relais apres paiement",
+              "base_cost": 11.26,
+              "min_price": 11.49,
+              "max_price": 11.49,
+              "carrier_name": "Openclaw Routed",
+              "carrier_service_name": "Livraison en Point Relais",
+              "carrier_service_code": "INT_RELAY_11.49",
+              "active": true
+            }
+          ]
+        },
+        {
+          "zone_name": "INT DOM 13.90",
+          "country_codes": [
+            "BG",
+            "BL",
+            "GF",
+            "GP",
+            "GR",
+            "MF",
+            "MQ",
+            "PM",
+            "RE",
+            "RO",
+            "YT"
+          ],
+          "services": [
+            {
+              "method_name": "Livraison \u00e0 domicile",
+              "description": "Delais variables selon destination",
+              "base_cost": 13.84,
+              "min_price": 13.9,
+              "max_price": 13.9,
+              "carrier_name": "Openclaw Routed",
+              "carrier_service_name": "Livraison \u00e0 domicile",
+              "carrier_service_code": "INT_DOM_13.90",
+              "active": true
+            }
+          ]
+        },
+        {
+          "zone_name": "INT DOM 13.90 RELAIS 13.49",
+          "country_codes": [
+            "HR"
+          ],
+          "services": [
+            {
+              "method_name": "Livraison \u00e0 domicile",
+              "description": "Delais variables selon destination",
+              "base_cost": 13.84,
+              "min_price": 13.9,
+              "max_price": 13.9,
+              "carrier_name": "Openclaw Routed",
+              "carrier_service_name": "Livraison \u00e0 domicile",
+              "carrier_service_code": "INT_DOM_13.90",
+              "active": true
+            },
+            {
+              "method_name": "Livraison en Point Relais",
+              "description": "Choisissez votre point relais apres paiement",
+              "base_cost": 13.72,
+              "min_price": 13.49,
+              "max_price": 13.49,
+              "carrier_name": "Openclaw Routed",
+              "carrier_service_name": "Livraison en Point Relais",
+              "carrier_service_code": "INT_RELAY_13.49",
+              "active": true
+            }
+          ]
+        },
+        {
+          "zone_name": "INT DOM 15.90",
+          "country_codes": [
+            "AL",
+            "AX",
+            "AZ",
+            "BA",
+            "BY",
+            "CY",
+            "DZ",
+            "GE",
+            "IS",
+            "MA",
+            "MD",
+            "ME",
+            "MK",
+            "MT",
+            "NO",
+            "RS",
+            "SJ",
+            "TN",
+            "TR",
+            "UA",
+            "XK"
+          ],
+          "services": [
+            {
+              "method_name": "Livraison \u00e0 domicile",
+              "description": "Delais variables selon destination",
+              "base_cost": 15.76,
+              "min_price": 15.9,
+              "max_price": 15.9,
+              "carrier_name": "Openclaw Routed",
+              "carrier_service_name": "Livraison \u00e0 domicile",
+              "carrier_service_code": "INT_DOM_15.90",
+              "active": true
+            }
+          ]
+        },
+        {
+          "zone_name": "INT DOM 16.49",
+          "country_codes": [
+            "NC",
+            "PF",
+            "TF",
+            "WF"
+          ],
+          "services": [
+            {
+              "method_name": "Livraison \u00e0 domicile",
+              "description": "Delais variables selon destination",
+              "base_cost": 16.41,
+              "min_price": 16.49,
+              "max_price": 16.49,
+              "carrier_name": "Openclaw Routed",
+              "carrier_service_name": "Livraison \u00e0 domicile",
+              "carrier_service_code": "INT_DOM_16.49",
+              "active": true
+            }
+          ]
+        },
+        {
+          "zone_name": "INT DOM 19.49",
+          "country_codes": [
+            "US"
+          ],
+          "services": [
+            {
+              "method_name": "Livraison \u00e0 domicile",
+              "description": "Delais variables selon destination",
+              "base_cost": 19.52,
+              "min_price": 19.49,
+              "max_price": 19.49,
+              "carrier_name": "Openclaw Routed",
+              "carrier_service_name": "Livraison \u00e0 domicile",
+              "carrier_service_code": "INT_DOM_19.49",
+              "active": true
+            }
+          ]
+        },
+        {
+          "zone_name": "INT DOM 19.90",
+          "country_codes": [
+            "CN",
+            "HK"
+          ],
+          "services": [
+            {
+              "method_name": "Livraison \u00e0 domicile",
+              "description": "Delais variables selon destination",
+              "base_cost": 19.98,
+              "min_price": 19.9,
+              "max_price": 19.9,
+              "carrier_name": "Openclaw Routed",
+              "carrier_service_name": "Livraison \u00e0 domicile",
+              "carrier_service_code": "INT_DOM_19.90",
+              "active": true
+            }
+          ]
+        },
+        {
+          "zone_name": "INT DOM 21.90",
+          "country_codes": [
+            "CA",
+            "ID",
+            "JP",
+            "KH",
+            "KR",
+            "LA",
+            "MO",
+            "MY",
+            "PH",
+            "SG",
+            "TH",
+            "TL",
+            "TW",
+            "VN"
+          ],
+          "services": [
+            {
+              "method_name": "Livraison \u00e0 domicile",
+              "description": "Delais variables selon destination",
+              "base_cost": 22.13,
+              "min_price": 21.9,
+              "max_price": 21.9,
+              "carrier_name": "Openclaw Routed",
+              "carrier_service_name": "Livraison \u00e0 domicile",
+              "carrier_service_code": "INT_DOM_21.90",
+              "active": true
+            }
+          ]
+        },
+        {
+          "zone_name": "INT DOM 24.90",
+          "country_codes": [
+            "AE",
+            "AM",
+            "BD",
+            "BH",
+            "BN",
+            "BT",
+            "EG",
+            "IN",
+            "JO",
+            "KW",
+            "LB",
+            "LK",
+            "LY",
+            "NP",
+            "OM",
+            "PK",
+            "PS",
+            "QA",
+            "SA",
+            "YE"
+          ],
+          "services": [
+            {
+              "method_name": "Livraison \u00e0 domicile",
+              "description": "Delais variables selon destination",
+              "base_cost": 24.85,
+              "min_price": 24.9,
+              "max_price": 24.9,
+              "carrier_name": "Openclaw Routed",
+              "carrier_service_name": "Livraison \u00e0 domicile",
+              "carrier_service_code": "INT_DOM_24.90",
+              "active": true
+            }
+          ]
+        },
+        {
+          "zone_name": "INT DOM 25.90",
+          "country_codes": [
+            "AG",
+            "AI",
+            "AR",
+            "AW",
+            "BB",
+            "BM",
+            "BO",
+            "BQ",
+            "BR",
+            "BS",
+            "BZ",
+            "CL",
+            "CO",
+            "CR",
+            "CW",
+            "DM",
+            "DO",
+            "EC",
+            "GD",
+            "GT",
+            "GY",
+            "HN",
+            "HT",
+            "JM",
+            "KN",
+            "KY",
+            "LC",
+            "MS",
+            "MX",
+            "PA",
+            "PE",
+            "PY",
+            "SR",
+            "SV",
+            "SX",
+            "TC",
+            "TT",
+            "UY",
+            "VC",
+            "VE",
+            "VG",
+            "ZA"
+          ],
+          "services": [
+            {
+              "method_name": "Livraison \u00e0 domicile",
+              "description": "Delais variables selon destination",
+              "base_cost": 25.89,
+              "min_price": 25.9,
+              "max_price": 25.9,
+              "carrier_name": "Openclaw Routed",
+              "carrier_service_name": "Livraison \u00e0 domicile",
+              "carrier_service_code": "INT_DOM_25.90",
+              "active": true
+            }
+          ]
+        },
+        {
+          "zone_name": "INT DOM 27.49",
+          "country_codes": [
+            "RU"
+          ],
+          "services": [
+            {
+              "method_name": "Livraison \u00e0 domicile",
+              "description": "Delais variables selon destination",
+              "base_cost": 27.74,
+              "min_price": 27.49,
+              "max_price": 27.49,
+              "carrier_name": "Openclaw Routed",
+              "carrier_service_name": "Livraison \u00e0 domicile",
+              "carrier_service_code": "INT_DOM_27.49",
+              "active": true
+            }
+          ]
+        },
+        {
+          "zone_name": "INT DOM 29.90",
+          "country_codes": [
+            "AU",
+            "NZ"
+          ],
+          "services": [
+            {
+              "method_name": "Livraison \u00e0 domicile",
+              "description": "Delais variables selon destination",
+              "base_cost": 30.12,
+              "min_price": 29.9,
+              "max_price": 29.9,
+              "carrier_name": "Openclaw Routed",
+              "carrier_service_name": "Livraison \u00e0 domicile",
+              "carrier_service_code": "INT_DOM_29.90",
+              "active": true
+            }
+          ]
+        },
+        {
+          "zone_name": "INT DOM 34.49",
+          "country_codes": [
+            "AF",
+            "AO",
+            "BF",
+            "BI",
+            "BJ",
+            "BW",
+            "CD",
+            "CG",
+            "CI",
+            "CK",
+            "CM",
+            "CV",
+            "DJ",
+            "ER",
+            "ET",
+            "FJ",
+            "GA",
+            "GH",
+            "GM",
+            "GN",
+            "IQ",
+            "KE",
+            "KG",
+            "KZ",
+            "LR",
+            "LS",
+            "MG",
+            "ML",
+            "MN",
+            "MR",
+            "MU",
+            "MV",
+            "MW",
+            "MZ",
+            "NA",
+            "NE",
+            "NG",
+            "PG",
+            "RW",
+            "SC",
+            "SN",
+            "SZ",
+            "TD",
+            "TG",
+            "TM",
+            "TO",
+            "TZ",
+            "UG",
+            "UZ",
+            "VU",
+            "WS",
+            "ZM",
+            "ZW"
+          ],
+          "services": [
+            {
+              "method_name": "Livraison \u00e0 domicile",
+              "description": "Delais variables selon destination",
+              "base_cost": 34.7,
+              "min_price": 34.49,
+              "max_price": 34.49,
+              "carrier_name": "Openclaw Routed",
+              "carrier_service_name": "Livraison \u00e0 domicile",
+              "carrier_service_code": "INT_DOM_34.49",
+              "active": true
+            }
+          ]
+        },
+        {
+          "zone_name": "INT DOM 35.49",
+          "country_codes": [
+            "CC",
+            "CF",
+            "CX",
+            "FK",
+            "GQ",
+            "GS",
+            "GW",
+            "IO",
+            "KI",
+            "KM",
+            "MM",
+            "NF",
+            "NR",
+            "NU",
+            "PN",
+            "SB",
+            "SD",
+            "SH",
+            "SL",
+            "SO",
+            "SS",
+            "ST",
+            "TJ",
+            "TK",
+            "TV"
+          ],
+          "services": [
+            {
+              "method_name": "Livraison \u00e0 domicile",
+              "description": "Delais variables selon destination",
+              "base_cost": 35.32,
+              "min_price": 35.49,
+              "max_price": 35.49,
+              "carrier_name": "Openclaw Routed",
+              "carrier_service_name": "Livraison \u00e0 domicile",
+              "carrier_service_code": "INT_DOM_35.49",
+              "active": true
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

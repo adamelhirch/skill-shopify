@@ -12,6 +12,9 @@ Choose `commerce-ops`.
 - Use background jobs for syncs, exports, and webhook-driven workflows.
 - Keep idempotency keys for every asynchronous event.
 - If CCS is not available, use manual service methods per zone and sync prices from cost plus margin with [manual-rates-without-ccs.md](manual-rates-without-ccs.md).
+- For external label purchase cost, prefer live provider quote mode in `scripts/plan_carrier_shipment.py` (`--rate-source auto` or `--rate-source live`) and fallback to policy only when needed.
+- If Sendcloud is the dedicated shipping hub, use `scripts/sendcloud_ops.py` for method listing and parcel/label creation from Shopify orders.
+- For non-Shopify label purchase flows, estimate package and rates first, then attach tracking with `scripts/attach_external_tracking.py`.
 
 ### Products, collections, inventory content, media
 
@@ -21,8 +24,8 @@ Choose `catalog-ops`.
 - Produce a diff before bulk writes.
 - Use files, metafields, and metaobjects for structured enrichment rather than overloading product descriptions.
 - For shipping normalization, set the native variant shipping weight first and store parcel dimensions in structured metafields.
-- Use [boxtal-packaging.md](boxtal-packaging.md) when you need repeatable parcel heuristics for spices, vanilla, tubes, jars, or flacons.
-- Use [boxtal-dispatch.md](boxtal-dispatch.md) when the task shifts from product normalization to order-level package selection or label-creation readiness.
+- Use [carrier-packaging.md](carrier-packaging.md) when you need repeatable parcel heuristics for spices, vanilla, tubes, jars, or flacons.
+- Use [carrier-dispatch.md](carrier-dispatch.md) when the task shifts from product normalization to order-level package selection or tracking-injection readiness.
 
 ### Pages, blogs, redirects, menus, translations, locales
 

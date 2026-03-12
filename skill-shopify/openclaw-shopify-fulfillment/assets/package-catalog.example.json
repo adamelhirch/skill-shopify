@@ -1,44 +1,34 @@
 {
   "packages": [
     {
-      "code": "flat_letter",
-      "label": "Enveloppe plate",
-      "inner_length_cm": 16.0,
-      "inner_width_cm": 11.0,
-      "inner_height_cm": 2.0,
+      "code": "sendcloud_default_20x15x5",
+      "label": "Sendcloud default parcel",
+      "inner_length_cm": 20.0,
+      "inner_width_cm": 15.0,
+      "inner_height_cm": 5.0,
       "empty_weight_kg": 0.02,
-      "max_weight_kg": 0.25,
-      "enabled": true
-    },
-    {
-      "code": "spice_box_s",
-      "label": "Boite epices S",
-      "inner_length_cm": 18.0,
-      "inner_width_cm": 12.0,
-      "inner_height_cm": 8.0,
-      "empty_weight_kg": 0.08,
       "max_weight_kg": 1.0,
       "enabled": true
     },
     {
-      "code": "spice_box_m",
-      "label": "Boite epices M",
-      "inner_length_cm": 22.0,
-      "inner_width_cm": 15.0,
+      "code": "sendcloud_medium_30x20x10",
+      "label": "Sendcloud medium parcel",
+      "inner_length_cm": 30.0,
+      "inner_width_cm": 20.0,
       "inner_height_cm": 10.0,
-      "empty_weight_kg": 0.12,
+      "empty_weight_kg": 0.08,
       "max_weight_kg": 2.0,
-      "enabled": true
+      "enabled": false
     },
     {
-      "code": "tube_box",
-      "label": "Boite tube vanille",
-      "inner_length_cm": 25.0,
-      "inner_width_cm": 5.0,
-      "inner_height_cm": 5.0,
-      "empty_weight_kg": 0.05,
-      "max_weight_kg": 0.5,
-      "enabled": true
+      "code": "sendcloud_large_40x30x15",
+      "label": "Sendcloud large parcel",
+      "inner_length_cm": 40.0,
+      "inner_width_cm": 30.0,
+      "inner_height_cm": 15.0,
+      "empty_weight_kg": 0.12,
+      "max_weight_kg": 5.0,
+      "enabled": false
     }
   ]
 }

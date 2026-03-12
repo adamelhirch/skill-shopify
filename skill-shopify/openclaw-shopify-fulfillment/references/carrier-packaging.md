@@ -1,6 +1,6 @@
-# Boxtal Packaging Playbook
+# Carrier Packaging Playbook
 
-Use this reference when Openclaw must estimate or normalize shipping weight and parcel dimensions for Shopify products before Boxtal consumption.
+Use this reference when Openclaw must estimate or normalize shipping weight and parcel dimensions for Shopify products before carrier label purchase.
 
 ## Principles
 

@@ -18,6 +18,8 @@ These already have stable commands in `scripts/shopify_admin_ops.py`:
 - inventory lookup and inventory adjustment
 - variant logistics reads and writes for shipping weight plus Openclaw parcel metafields
 - customer reads and customer updates
+- markets listing, market inspection, market creation, and market country assignment updates
+- delivery profile listing and shippable variant assignment to delivery profiles
 - raw GraphQL query execution
 - raw GraphQL mutation execution
 
@@ -32,7 +34,6 @@ Use `graphql-query` or `graphql-mutation` when the task touches any of these and
 - content and online store pages
 - navigation
 - translations and locales
-- markets
 - checkout branding
 - themes
 - pixels

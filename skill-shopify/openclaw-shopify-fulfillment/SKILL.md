@@ -149,10 +149,15 @@ Use these helpers first before inventing ad hoc code:
 - `scripts/verify_shopify_hmac.py` for webhook authenticity checks
 - `scripts/normalize_shopify_webhook.py` for fulfillment-mirror payload normalization
 - `scripts/shopify_admin_ops.py` for deterministic Shopify Admin reads and writes in OpenClaw, with runtime token generation from `SHOPIFY_CLIENT_ID` and `SHOPIFY_CLIENT_SECRET`
-- `scripts/plan_boxtal_shipment.py` to aggregate order weight and dimensions, choose a package, and build a Boxtal-ready shipment payload
+- `scripts/carrier_rate_clients.py` for carrier API quote calls (UPS rating API, Chronopost quickCost SOAP, Colissimo product lookup)
+- `scripts/plan_carrier_shipment.py` to aggregate order weight and dimensions, choose a package, infer colis type, and estimate checkout prices from `assets/manual-rate-policy.json`, optionally with live provider quotes
+- `scripts/sendcloud_ops.py` for Sendcloud integration (shipping methods listing, parcel creation, label request from Shopify order)
+- `scripts/sendcloud_webhook_receiver.py` for receiving and verifying Sendcloud webhook feedback (signature + event log)
+- `scripts/attach_external_tracking.py` to create the Shopify fulfillment and attach tracking after buying a label outside Shopify
 - `scripts/sync_manual_shipping_rates.py` to keep manual Shopify checkout rates aligned with transport costs and margin rules when CCS is unavailable
-- `references/boxtal-packaging.md` for weight and parcel-dimension normalization rules used by Openclaw logistics and carrier-routing workflows
-- `references/boxtal-dispatch.md` for package-catalog planning, shipment aggregation, and label-creation prerequisites
+- `scripts/generate_sendcloud_shipping_profile.py` to derive a multi-zone Shopify delivery profile and a Sendcloud routing policy from a Sendcloud price export
+- `references/carrier-packaging.md` for weight and parcel-dimension normalization rules used by Openclaw logistics and carrier-routing workflows
+- `references/carrier-dispatch.md` for package-catalog planning, shipment aggregation, and label-injection prerequisites
 - `references/manual-rates-without-ccs.md` for transporter-by-country checkout strategy with manual rates
 
 ## Tool Selection Rule
@@ -195,6 +200,14 @@ Choose tools in this order:
 - `variant-logistics-set`
 - `customer-get`
 - `customer-update`
+- `markets-list`
+- `market-get`
+- `market-create`
+- `market-countries-add`
+- `market-countries-remove`
+- `delivery-profiles-list`
+- `variants-shippable-list`
+- `delivery-profile-assign-variants`
 - `graphql-query`
 - `graphql-mutation`
 
@@ -214,9 +227,30 @@ python scripts/shopify_admin_ops.py fulfillment-orders-for-order --order-name "#
 python scripts/shopify_admin_ops.py fulfillment-create --input-json "{...}" --dry-run
 python scripts/shopify_admin_ops.py product-update --handle "vanille-12-gousses" --title "Vanille 12 gousses premium" --dry-run
 python scripts/shopify_admin_ops.py inventory-adjust --input-json "{...}" --dry-run
+python scripts/shopify_admin_ops.py markets-list
+python scripts/shopify_admin_ops.py market-get --market-name "International"
+python scripts/shopify_admin_ops.py market-create --name "Suisse" --country-code CH --dry-run
+python scripts/shopify_admin_ops.py market-countries-add --market-name "International" --country-code AD --dry-run
+python scripts/shopify_admin_ops.py market-countries-remove --market-name "International" --country-code AD --dry-run
+python scripts/shopify_admin_ops.py delivery-profiles-list
+python scripts/shopify_admin_ops.py variants-shippable-list --profile-name "Openclaw Shipping"
+python scripts/shopify_admin_ops.py delivery-profile-assign-variants --profile-name "Openclaw Shipping" --dry-run
 python scripts/shopify_admin_ops.py graphql-mutation --query-file mutation.graphql --variables-json "{...}" --dry-run
-python scripts/plan_boxtal_shipment.py --order-name "#1004" --packages-file assets/package-catalog.example.json
-python scripts/sync_manual_shipping_rates.py --policy-file assets/manual-rate-policy.example.json --costs-file assets/boxtal-costs.example.json
+python scripts/plan_carrier_shipment.py --order-name "#1004" --packages-file assets/package-catalog.example.json
+python scripts/plan_carrier_shipment.py --order-name "#1004" --packages-file assets/package-catalog.example.json --rates-policy-file assets/manual-rate-policy.json
+python scripts/plan_carrier_shipment.py --order-name "#1004" --rates-policy-file assets/manual-rate-policy.json --rate-source auto
+python scripts/plan_carrier_shipment.py --order-name "#1004" --rates-policy-file assets/manual-rate-policy.json --rate-source live --strict-live-rates
+python scripts/sendcloud_ops.py context
+python scripts/sendcloud_ops.py shipping-methods-list --from-country FR --to-country FR --weight 0.25
+python scripts/sendcloud_ops.py parcel-create-from-order --order-name "#1004" --packages-file assets/package-catalog.sendcloud.json --dry-run
+python scripts/sendcloud_ops.py parcel-create-from-order --order-name "#1004" --packages-file assets/package-catalog.sendcloud.json --allow-oversize-package --dry-run
+python scripts/sendcloud_ops.py parcel-create-from-order --order-name "#1004" --packages-file assets/package-catalog.sendcloud.json
+python scripts/sendcloud_webhook_receiver.py --signature-key "<YOUR_SIGNATURE_KEY>"
+python scripts/attach_external_tracking.py --order-name "#1004" --carrier "Colissimo" --tracking-number "8X12345678901" --tracking-url "https://www.laposte.fr/outils/suivre-vos-envois?code=8X12345678901" --dry-run
+python scripts/attach_external_tracking.py --order-name "#1004" --carrier "Colissimo" --tracking-number "8X12345678901" --tracking-url "https://www.laposte.fr/outils/suivre-vos-envois?code=8X12345678901"
+python scripts/generate_sendcloud_shipping_profile.py --csv-file ~/Downloads/sendcloud_price_list_20260311_190656.csv
+python scripts/sync_manual_shipping_rates.py --policy-file assets/manual-rate-policy.json
+python scripts/sync_manual_shipping_rates.py --policy-file assets/manual-rate-policy.json --apply
 ```
 
 ## Resources
@@ -226,8 +260,8 @@ python scripts/sync_manual_shipping_rates.py --policy-file assets/manual-rate-po
 - Read [references/shopify-api-notes.md](references/shopify-api-notes.md) for current API constraints and protected operations.
 - Read [references/integration-contract.md](references/integration-contract.md) when the task still touches fulfillment intake.
 - Read [references/surface-matrix.md](references/surface-matrix.md) to route tasks to dedicated commands versus raw GraphQL.
-- Read [references/boxtal-packaging.md](references/boxtal-packaging.md) when the task needs a shipping-weight estimate, package dimensions, or Boxtal-ready product normalization.
-- Read [references/boxtal-dispatch.md](references/boxtal-dispatch.md) when the task needs package selection, order-level shipment planning, or automatic label-generation prerequisites.
+- Read [references/carrier-packaging.md](references/carrier-packaging.md) when the task needs a shipping-weight estimate, package dimensions, or carrier-ready product normalization.
+- Read [references/carrier-dispatch.md](references/carrier-dispatch.md) when the task needs package selection, order-level shipment planning, or automatic tracking injection prerequisites.
 - Read [references/manual-rates-without-ccs.md](references/manual-rates-without-ccs.md) when checkout must expose transporter choices on a non-CCS plan.
 
 ## Example Requests

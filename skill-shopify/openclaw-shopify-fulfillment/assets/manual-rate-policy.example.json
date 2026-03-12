@@ -4,69 +4,124 @@
   "default_margin_fixed": 0.5,
   "default_min_price": 3.9,
   "default_max_price": 29.0,
-  "zones": [
+  "active_colis_type": "M",
+  "colis_types": {
+    "S": {
+      "label": "Petit colis",
+      "max_weight_kg": 0.35,
+      "length_cm": 18,
+      "width_cm": 12,
+      "height_cm": 4
+    },
+    "M": {
+      "label": "Colis moyen",
+      "max_weight_kg": 1.0,
+      "length_cm": 22,
+      "width_cm": 16,
+      "height_cm": 8
+    },
+    "L": {
+      "label": "Grand colis",
+      "max_weight_kg": 3.0,
+      "length_cm": 32,
+      "width_cm": 24,
+      "height_cm": 12
+    }
+  },
+  "profiles": [
     {
-      "zone_name": "France",
-      "services": [
+      "profile_name": "General profile",
+      "zones": [
         {
-          "service_code": "mr_relais_fr",
-          "method_name": "Point relais Mondial Relay",
-          "base_cost": 4.2,
-          "margin_percent": 12.0,
-          "margin_fixed": 0.35,
-          "min_price": 3.9,
-          "max_price": 8.9,
-          "active": true
+          "zone_name": "France",
+          "services": [
+            {
+              "method_name": "Domicile Colissimo",
+              "description": "2 a 3 jours via Colissimo",
+              "carrier_name": "Colissimo",
+              "carrier_service_name": "Domicile sans signature",
+              "carrier_service_code": "COLISSIMO_DOMICILE_ACCESS",
+              "base_cost_by_colis_type": {
+                "S": 5.5,
+                "M": 6.1,
+                "L": 7.8
+              },
+              "margin_percent": 14.0,
+              "margin_fixed": 0.5,
+              "min_price": 5.9,
+              "max_price": 11.9,
+              "active": true
+            },
+            {
+              "method_name": "Express Chronopost 13h",
+              "description": "Livraison express a domicile",
+              "carrier_name": "Chronopost",
+              "carrier_service_name": "Chrono 13",
+              "carrier_service_code": "CHRONO13",
+              "base_cost_by_colis_type": {
+                "S": 7.9,
+                "M": 8.8,
+                "L": 11.4
+              },
+              "margin_percent": 15.0,
+              "margin_fixed": 0.75,
+              "min_price": 8.9,
+              "max_price": 16.9,
+              "active": true
+            }
+          ]
         },
         {
-          "service_code": "colissimo_home_fr",
-          "method_name": "Domicile Colissimo",
-          "base_cost": 6.1,
-          "margin_percent": 14.0,
-          "margin_fixed": 0.5,
-          "min_price": 5.9,
-          "max_price": 11.9,
-          "active": true
-        },
-        {
-          "service_code": "chronopost_express_fr",
-          "method_name": "Domicile Express Chronopost",
-          "base_cost": 8.8,
-          "margin_percent": 15.0,
-          "margin_fixed": 0.75,
-          "min_price": 8.9,
-          "max_price": 16.9,
-          "active": true
+          "zone_name": "UE (Union Européenne)",
+          "country_codes": ["AT", "BE", "DE", "DK", "ES", "FI", "IE", "IT", "LU", "NL", "PL", "PT", "SE"],
+          "services": [
+            {
+              "method_name": "Domicile Standard UE",
+              "description": "3 a 5 jours selon pays",
+              "carrier_name": "UPS",
+              "carrier_service_name": "Standard",
+              "carrier_service_code": "UPS_STANDARD",
+              "base_cost_by_colis_type": {
+                "S": 10.9,
+                "M": 12.4,
+                "L": 16.8
+              },
+              "margin_percent": 16.0,
+              "margin_fixed": 0.9,
+              "min_price": 9.9,
+              "max_price": 24.9,
+              "active": true
+            }
+          ]
         }
       ]
     },
     {
-      "zone_name": "UE (Union Européenne)",
-      "services": [
+      "profile_name": "Export profile",
+      "create_if_missing": true,
+      "zones": [
         {
-          "service_code": "home_standard_eu",
-          "method_name": "Domicile Standard UE",
-          "base_cost": 12.4,
-          "margin_percent": 16.0,
-          "margin_fixed": 0.9,
-          "min_price": 9.9,
-          "max_price": 24.9,
-          "active": true
-        }
-      ]
-    },
-    {
-      "zone_name": "International",
-      "services": [
-        {
-          "service_code": "home_standard_world",
-          "method_name": "Domicile Standard International",
-          "base_cost": 19.5,
-          "margin_percent": 20.0,
-          "margin_fixed": 1.5,
-          "min_price": 16.9,
-          "max_price": 39.9,
-          "active": true
+          "zone_name": "International",
+          "country_codes": ["CH", "GB", "US"],
+          "services": [
+            {
+              "method_name": "Domicile Standard International",
+              "description": "Delais variables selon destination",
+              "carrier_name": "UPS",
+              "carrier_service_name": "Expedited",
+              "carrier_service_code": "UPS_EXPEDITED",
+              "base_cost_by_colis_type": {
+                "S": 17.4,
+                "M": 19.5,
+                "L": 27.0
+              },
+              "margin_percent": 20.0,
+              "margin_fixed": 1.5,
+              "min_price": 16.9,
+              "max_price": 39.9,
+              "active": true
+            }
+          ]
         }
       ]
     }

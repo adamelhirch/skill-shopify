@@ -2,6 +2,7 @@ import argparse
 import json
 import os
 from pathlib import Path
+import re
 import tempfile
 import time
 import urllib.error
@@ -10,6 +11,7 @@ import urllib.request
 
 
 DEFAULT_API_VERSION = "2026-01"
+COUNTRY_CODE_PATTERN = re.compile(r"^[A-Z]{2}$")
 
 
 def load_openclaw_env() -> dict[str, str]:
@@ -232,6 +234,13 @@ def has_scope(context: dict, scope_name: str) -> bool:
 
 
 def graph_ql(context: dict, query: str, variables: dict | None = None) -> dict:
+    result = graph_ql_allow_errors(context, query, variables)
+    if result.get("errors"):
+        fail("Shopify GraphQL errors: " + json.dumps(result["errors"], ensure_ascii=True))
+    return result.get("data") or {}
+
+
+def graph_ql_allow_errors(context: dict, query: str, variables: dict | None = None) -> dict:
     url = f"https://{context['store_domain']}/admin/api/{context['api_version']}/graphql.json"
     payload = json.dumps({"query": query, "variables": variables or {}}, ensure_ascii=True).encode("utf-8")
     request = urllib.request.Request(
@@ -251,9 +260,10 @@ def graph_ql(context: dict, query: str, variables: dict | None = None) -> dict:
         fail(f"Shopify HTTP error {exc.code}: {body}")
     except OSError as exc:
         fail(f"Shopify connection error: {exc}")
-    if data.get("errors"):
-        fail("Shopify GraphQL errors: " + json.dumps(data["errors"], ensure_ascii=True))
-    return data.get("data") or {}
+    return {
+        "data": data.get("data") or {},
+        "errors": data.get("errors") or [],
+    }
 
 
 def graphql_operation(args: argparse.Namespace, query: str, variables: dict | None = None) -> None:
@@ -294,6 +304,146 @@ def first_node(nodes: list[dict], label: str) -> dict:
     if not nodes:
         fail(f"No {label} found")
     return nodes[0]
+
+
+def require_scopes(context: dict, *scope_names: str) -> None:
+    if not context.get("scope"):
+        return
+    missing = [scope_name for scope_name in scope_names if not has_scope(context, scope_name)]
+    if missing:
+        fail("Missing required Shopify scopes: " + ", ".join(missing))
+
+
+def require_any_scope(context: dict, *scope_names: str) -> None:
+    if not context.get("scope"):
+        return
+    if any(has_scope(context, scope_name) for scope_name in scope_names):
+        return
+    fail("Missing required Shopify scope. Expected one of: " + ", ".join(scope_names))
+
+
+def unique_preserve_order(values: list[str]) -> list[str]:
+    seen: set[str] = set()
+    result: list[str] = []
+    for value in values:
+        if value in seen:
+            continue
+        seen.add(value)
+        result.append(value)
+    return result
+
+
+def normalize_country_codes(raw_values: list[str] | None) -> list[str]:
+    if not raw_values:
+        fail("Provide at least one --country-code")
+    normalized: list[str] = []
+    for raw_value in raw_values:
+        for part in raw_value.split(","):
+            candidate = part.strip().upper()
+            if not candidate:
+                continue
+            if not COUNTRY_CODE_PATTERN.match(candidate):
+                fail(f"Invalid country code: {part.strip() or raw_value}")
+            normalized.append(candidate)
+    normalized = unique_preserve_order(normalized)
+    if not normalized:
+        fail("Provide at least one --country-code")
+    return normalized
+
+
+def serialize_market_region(region: dict) -> dict:
+    payload = {
+        "type": region.get("__typename"),
+        "name": region.get("name"),
+    }
+    if region.get("__typename") == "MarketRegionCountry":
+        payload["id"] = region.get("id")
+        payload["code"] = region.get("code")
+    return payload
+
+
+def serialize_market_record(record: dict) -> dict:
+    regions = [serialize_market_region(region) for region in ((record.get("regions") or {}).get("nodes") or [])]
+    country_codes = [
+        region["code"]
+        for region in regions
+        if region.get("type") == "MarketRegionCountry" and region.get("code")
+    ]
+    return {
+        "id": record.get("id"),
+        "name": record.get("name"),
+        "regions": regions,
+        "country_codes": country_codes,
+    }
+
+
+def fetch_market_by_id(context: dict, market_gid: str) -> dict:
+    query = """
+    query MarketGet($id: ID!) {
+      market(id: $id) {
+        id
+        name
+        regions(first: 250) {
+          nodes {
+            __typename
+            name
+            ... on MarketRegionCountry {
+              id
+              code
+            }
+          }
+        }
+      }
+    }
+    """
+    data = graph_ql(context, query, {"id": market_gid})
+    market = data.get("market")
+    if not market:
+        fail(f"No market found for id {market_gid}")
+    return market
+
+
+def find_market_by_name(context: dict, market_name: str) -> dict:
+    query = """
+    query MarketsLookup($first: Int!) {
+      markets(first: $first) {
+        nodes {
+          id
+          name
+          regions(first: 250) {
+            nodes {
+              __typename
+              name
+              ... on MarketRegionCountry {
+                id
+                code
+              }
+            }
+          }
+        }
+      }
+    }
+    """
+    data = graph_ql(context, query, {"first": 100})
+    normalized_target = market_name.strip().casefold()
+    candidates = [
+        market
+        for market in data.get("markets", {}).get("nodes", [])
+        if str(market.get("name") or "").strip().casefold() == normalized_target
+    ]
+    if not candidates:
+        fail(f"No market found for name {market_name}")
+    if len(candidates) > 1:
+        fail(f"Multiple markets matched name {market_name}; use --market-id")
+    return candidates[0]
+
+
+def resolve_market_id(context: dict, market_id: str | None = None, market_name: str | None = None) -> str:
+    if market_id:
+        return as_gid("Market", market_id)
+    if market_name:
+        return find_market_by_name(context, market_name)["id"]
+    fail("Provide --market-id or --market-name")
 
 
 def resolve_order_id(context: dict, order_id: str | None = None, order_name: str | None = None) -> str:
@@ -382,6 +532,189 @@ def resolve_variant_id(
     data = graph_ql(context, query, {"id": product_gid})
     record = first_node(data["product"]["variants"]["nodes"], "variant")
     return record["id"]
+
+
+def list_delivery_profiles(context: dict, first: int = 50) -> list[dict]:
+    data = graph_ql(
+        context,
+        """
+        query DeliveryProfilesList($first: Int!) {
+          deliveryProfiles(first: $first) {
+            nodes {
+              id
+              name
+            }
+          }
+        }
+        """,
+        {"first": first},
+    )
+    return data.get("deliveryProfiles", {}).get("nodes", [])
+
+
+def resolve_delivery_profile(context: dict, profile_id: str | None = None, profile_name: str | None = None) -> dict:
+    if not profile_id and not profile_name:
+        fail("Provide --profile-id or --profile-name")
+    target_id = as_gid("DeliveryProfile", profile_id) if profile_id else None
+    target_name = str(profile_name or "").strip().casefold() or None
+    candidates = []
+    for profile in list_delivery_profiles(context):
+        current_id = profile.get("id")
+        current_name = str(profile.get("name") or "").strip()
+        if target_id and current_id == target_id:
+            candidates.append(profile)
+        elif target_name and current_name.casefold() == target_name:
+            candidates.append(profile)
+    if not candidates:
+        fail(f"No delivery profile found for {profile_id or profile_name}")
+    if len(candidates) > 1:
+        fail(f"Multiple delivery profiles matched {profile_id or profile_name}; use --profile-id")
+    return candidates[0]
+
+
+def list_shippable_variants(context: dict, page_size: int = 100, query_filter: str | None = None) -> list[dict]:
+    after_cursor = None
+    variants: list[dict] = []
+    while True:
+        data = graph_ql(
+            context,
+            """
+            query ShippableVariants($first: Int!, $after: String, $query: String) {
+              productVariants(first: $first, after: $after, query: $query) {
+                nodes {
+                  id
+                  sku
+                  title
+                  deliveryProfile {
+                    id
+                    name
+                  }
+                  inventoryItem {
+                    id
+                    tracked
+                    requiresShipping
+                  }
+                  product {
+                    id
+                    title
+                    handle
+                    status
+                  }
+                }
+                pageInfo {
+                  hasNextPage
+                  endCursor
+                }
+              }
+            }
+            """,
+            {"first": page_size, "after": after_cursor, "query": query_filter},
+        )
+        page = data.get("productVariants", {})
+        for variant in page.get("nodes", []):
+            inventory_item = variant.get("inventoryItem") or {}
+            if inventory_item.get("requiresShipping") is not True:
+                continue
+            variants.append(variant)
+        page_info = page.get("pageInfo") or {}
+        if not page_info.get("hasNextPage"):
+            break
+        after_cursor = page_info.get("endCursor")
+        if not after_cursor:
+            break
+    return variants
+
+
+def fetch_variants_by_ids(context: dict, variant_ids: list[str]) -> list[dict]:
+    if not variant_ids:
+        return []
+    data = graph_ql(
+        context,
+        """
+        query VariantsByIds($ids: [ID!]!) {
+          nodes(ids: $ids) {
+            ... on ProductVariant {
+              id
+              sku
+              title
+              deliveryProfile {
+                id
+                name
+              }
+              inventoryItem {
+                id
+                tracked
+                requiresShipping
+              }
+              product {
+                id
+                title
+                handle
+                status
+              }
+            }
+          }
+        }
+        """,
+        {"ids": variant_ids},
+    )
+    return [node for node in (data.get("nodes") or []) if node]
+
+
+def update_market_country_codes(context: dict, market_gid: str, country_codes: list[str], add: bool) -> dict:
+    conditions_key = "conditionsToAdd" if add else "conditionsToDelete"
+    mutation = """
+    mutation MarketUpdateCountries($id: ID!, $input: MarketUpdateInput!) {
+      marketUpdate(id: $id, input: $input) {
+        market {
+          id
+          name
+          regions(first: 250) {
+            nodes {
+              __typename
+              name
+              ... on MarketRegionCountry {
+                id
+                code
+              }
+            }
+          }
+        }
+        userErrors {
+          field
+          message
+        }
+      }
+    }
+    """
+    variables = {
+        "id": market_gid,
+        "input": {
+            "conditions": {
+                conditions_key: {
+                    "regionsCondition": {
+                        "regions": [{"countryCode": code} for code in country_codes],
+                    }
+                }
+            }
+        },
+    }
+    response = graph_ql_allow_errors(context, mutation, variables)
+    payload = (response.get("data") or {}).get("marketUpdate") or {}
+    user_errors = payload.get("userErrors") or []
+    for error in response.get("errors") or []:
+        user_errors.append(
+            {
+                "field": None,
+                "message": str(error.get("message") or error),
+            }
+        )
+    return {
+        "market": serialize_market_record(payload.get("market") or {}),
+        "user_errors": user_errors,
+        "query": mutation,
+        "variables": variables,
+    }
 
 
 def resolve_customer_id(context: dict, customer_id: str | None = None, email: str | None = None) -> str:
@@ -885,6 +1218,159 @@ def command_product_update(args: argparse.Namespace) -> None:
     )
 
 
+def command_delivery_profiles_list(args: argparse.Namespace) -> None:
+    context = resolve_context(args)
+    profiles = list_delivery_profiles(context, first=args.first)
+    output(
+        {
+            "ok": True,
+            "mode": "delivery-profiles-list",
+            "shop": context["store_domain"],
+            "api_version": context["api_version"],
+            "profiles": profiles,
+        }
+    )
+
+
+def command_variants_shippable_list(args: argparse.Namespace) -> None:
+    context = resolve_context(args)
+    target_profile = None
+    if args.profile_id or args.profile_name:
+        target_profile = resolve_delivery_profile(context, args.profile_id, args.profile_name)
+    variants = list_shippable_variants(context, page_size=args.first, query_filter=args.query)
+    if target_profile:
+        target_id = target_profile["id"]
+        matching = [variant for variant in variants if ((variant.get("deliveryProfile") or {}).get("id") == target_id)]
+        mismatched = [variant for variant in variants if ((variant.get("deliveryProfile") or {}).get("id") != target_id)]
+    else:
+        matching = variants
+        mismatched = []
+
+    selected = matching if args.only_matching else mismatched if args.only_mismatched else variants
+    if args.limit is not None:
+        selected = selected[: args.limit]
+    output(
+        {
+            "ok": True,
+            "mode": "variants-shippable-list",
+            "shop": context["store_domain"],
+            "api_version": context["api_version"],
+            "profile": target_profile,
+            "counts": {
+                "shippable": len(variants),
+                "matching_profile": len(matching),
+                "mismatched_profile": len(mismatched),
+                "selected": len(selected),
+            },
+            "variants": selected,
+        }
+    )
+
+
+def command_delivery_profile_assign_variants(args: argparse.Namespace) -> None:
+    context = resolve_context(args)
+    target_profile = resolve_delivery_profile(context, args.profile_id, args.profile_name)
+    if args.variant_id:
+        variant_ids = unique_preserve_order([as_gid("ProductVariant", value) for value in args.variant_id])
+        variants = fetch_variants_by_ids(context, variant_ids)
+    else:
+        variants = list_shippable_variants(context, page_size=args.first, query_filter=args.query)
+
+    target_profile_id = target_profile["id"]
+    skipped_non_shippable = []
+    selected_variants = []
+    for variant in variants:
+        inventory_item = variant.get("inventoryItem") or {}
+        if inventory_item.get("requiresShipping") is not True:
+            skipped_non_shippable.append(variant.get("id"))
+            continue
+        current_profile_id = (variant.get("deliveryProfile") or {}).get("id")
+        if current_profile_id == target_profile_id:
+            continue
+        selected_variants.append(variant)
+
+    if args.limit is not None:
+        selected_variants = selected_variants[: args.limit]
+
+    batch_size = max(1, min(args.batch_size, 200))
+    batches = [
+        [variant["id"] for variant in selected_variants[index : index + batch_size]]
+        for index in range(0, len(selected_variants), batch_size)
+    ]
+
+    mutation = """
+    mutation AssignVariantsToDeliveryProfile($id: ID!, $profile: DeliveryProfileInput!) {
+      deliveryProfileUpdate(id: $id, profile: $profile) {
+        profile {
+          id
+          name
+        }
+        userErrors {
+          field
+          message
+        }
+      }
+    }
+    """
+    preview_batches = [{"id": target_profile_id, "profile": {"variantsToAssociate": batch}} for batch in batches]
+    if getattr(args, "dry_run", False):
+        output(
+            {
+                "ok": True,
+                "mode": "delivery-profile-assign-variants",
+                "dry_run": True,
+                "shop": context["store_domain"],
+                "api_version": context["api_version"],
+                "profile": target_profile,
+                "counts": {
+                    "scanned": len(variants),
+                    "skipped_non_shippable": len(skipped_non_shippable),
+                    "already_assigned": len(variants) - len(skipped_non_shippable) - len(selected_variants),
+                    "selected": len(selected_variants),
+                    "batch_count": len(batches),
+                },
+                "selected_variants": selected_variants,
+                "mutation": mutation,
+                "preview_batches": preview_batches,
+            }
+        )
+        return
+
+    apply_results = []
+    for batch in batches:
+        payload = graph_ql(
+            context,
+            mutation,
+            {
+                "id": target_profile_id,
+                "profile": {"variantsToAssociate": batch},
+            },
+        ).get("deliveryProfileUpdate") or {}
+        apply_results.append(
+            {
+                "batch_size": len(batch),
+                "user_errors": payload.get("userErrors") or [],
+            }
+        )
+    output(
+        {
+            "ok": True,
+            "mode": "delivery-profile-assign-variants",
+            "dry_run": False,
+            "shop": context["store_domain"],
+            "api_version": context["api_version"],
+            "profile": target_profile,
+            "counts": {
+                "scanned": len(variants),
+                "skipped_non_shippable": len(skipped_non_shippable),
+                "selected": len(selected_variants),
+                "batch_count": len(batches),
+            },
+            "apply_results": apply_results,
+        }
+    )
+
+
 def command_inventory_by_sku(args: argparse.Namespace) -> None:
     query_filter = " OR ".join(f"sku:{sku}" for sku in args.sku)
     graphql_operation(
@@ -1235,6 +1721,261 @@ def command_customer_update(args: argparse.Namespace) -> None:
     )
 
 
+def command_markets_list(args: argparse.Namespace) -> None:
+    context = resolve_context(args)
+    require_any_scope(context, "read_markets", "write_markets")
+    query = """
+    query MarketsList($first: Int!) {
+      markets(first: $first) {
+        nodes {
+          id
+          name
+          regions(first: 250) {
+            nodes {
+              __typename
+              name
+              ... on MarketRegionCountry {
+                id
+                code
+              }
+            }
+          }
+        }
+      }
+    }
+    """
+    variables = {"first": args.first}
+    if getattr(args, "dry_run", False):
+        output(
+            {
+                "ok": True,
+                "mode": args.command,
+                "dry_run": True,
+                "shop": context["store_domain"],
+                "api_version": context["api_version"],
+                "query": query,
+                "variables": variables,
+            }
+        )
+        return
+    data = graph_ql(context, query, variables)
+    markets = [serialize_market_record(record) for record in data.get("markets", {}).get("nodes", [])]
+    output({"ok": True, "mode": args.command, "shop": context["store_domain"], "api_version": context["api_version"], "markets": markets})
+
+
+def command_market_get(args: argparse.Namespace) -> None:
+    context = resolve_context(args)
+    require_any_scope(context, "read_markets", "write_markets")
+    market_gid = resolve_market_id(context, args.market_id, args.market_name)
+    market = serialize_market_record(fetch_market_by_id(context, market_gid))
+    output({"ok": True, "mode": args.command, "shop": context["store_domain"], "api_version": context["api_version"], "market": market})
+
+
+def command_market_countries_update(args: argparse.Namespace) -> None:
+    context = resolve_context(args)
+    require_scopes(context, "write_markets")
+    market_gid = resolve_market_id(context, args.market_id, args.market_name)
+    market_before = serialize_market_record(fetch_market_by_id(context, market_gid))
+    country_codes = normalize_country_codes(args.country_code)
+    conditions_key = "conditionsToAdd" if args.command == "market-countries-add" else "conditionsToDelete"
+    mutation = """
+    mutation MarketUpdateCountries($id: ID!, $input: MarketUpdateInput!) {
+      marketUpdate(id: $id, input: $input) {
+        market {
+          id
+          name
+          regions(first: 250) {
+            nodes {
+              __typename
+              name
+              ... on MarketRegionCountry {
+                id
+                code
+              }
+            }
+          }
+        }
+        userErrors {
+          field
+          message
+        }
+      }
+    }
+    """
+    variables = {
+        "id": market_gid,
+        "input": {
+            "conditions": {
+                conditions_key: {
+                    "regionsCondition": {
+                        "regions": [{"countryCode": code} for code in country_codes],
+                    }
+                }
+            }
+        },
+    }
+    preview = {
+        "market_id": market_gid,
+        "market_name": market_before["name"],
+        "country_codes": country_codes,
+        "action": "add" if args.command == "market-countries-add" else "remove",
+        "before_country_codes": market_before["country_codes"],
+    }
+    if getattr(args, "dry_run", False):
+        output(
+            {
+                "ok": True,
+                "mode": args.command,
+                "dry_run": True,
+                "shop": context["store_domain"],
+                "api_version": context["api_version"],
+                "preview": preview,
+                "query": mutation,
+                "variables": variables,
+            }
+        )
+        return
+    data = graph_ql(context, mutation, variables)
+    payload = data.get("marketUpdate") or {}
+    market_after = serialize_market_record(payload.get("market") or {})
+    output(
+        {
+            "ok": True,
+            "mode": args.command,
+            "shop": context["store_domain"],
+            "api_version": context["api_version"],
+            "preview": preview,
+            "market": market_after,
+            "user_errors": payload.get("userErrors") or [],
+        }
+    )
+
+
+def command_market_countries_ensure(args: argparse.Namespace) -> None:
+    context = resolve_context(args)
+    require_scopes(context, "write_markets")
+    market_gid = resolve_market_id(context, args.market_id, args.market_name)
+    market_before = serialize_market_record(fetch_market_by_id(context, market_gid))
+    requested = normalize_country_codes(args.country_code)
+    already_present = [code for code in requested if code in market_before["country_codes"]]
+    missing = [code for code in requested if code not in market_before["country_codes"]]
+
+    if getattr(args, "dry_run", False):
+        output(
+            {
+                "ok": True,
+                "mode": args.command,
+                "dry_run": True,
+                "shop": context["store_domain"],
+                "api_version": context["api_version"],
+                "market": market_before,
+                "already_present": already_present,
+                "pending": missing,
+            }
+        )
+        return
+
+    added = []
+    skipped = []
+    for code in missing:
+        result = update_market_country_codes(context, market_gid, [code], add=True)
+        errors = result["user_errors"]
+        if errors:
+            skipped.append({"country_code": code, "user_errors": errors})
+            continue
+        added.append(code)
+
+    market_after = serialize_market_record(fetch_market_by_id(context, market_gid))
+    output(
+        {
+            "ok": True,
+            "mode": args.command,
+            "shop": context["store_domain"],
+            "api_version": context["api_version"],
+            "market_before": market_before,
+            "market_after": market_after,
+            "already_present": already_present,
+            "added": added,
+            "skipped": skipped,
+        }
+    )
+
+
+def command_market_create(args: argparse.Namespace) -> None:
+    context = resolve_context(args)
+    require_scopes(context, "write_markets")
+    country_codes = normalize_country_codes(args.country_code)
+    mutation = """
+    mutation MarketCreate($input: MarketCreateInput!) {
+      marketCreate(input: $input) {
+        market {
+          id
+          name
+          regions(first: 250) {
+            nodes {
+              __typename
+              name
+              ... on MarketRegionCountry {
+                id
+                code
+              }
+            }
+          }
+        }
+        userErrors {
+          field
+          message
+        }
+      }
+    }
+    """
+    input_payload: dict[str, object] = {
+        "name": args.name,
+        "conditions": {
+            "regionsCondition": {
+                "regions": [{"countryCode": code} for code in country_codes],
+            }
+        },
+        "status": args.status,
+    }
+    if args.handle:
+        input_payload["handle"] = args.handle
+    variables = {"input": input_payload}
+    preview = {
+        "name": args.name,
+        "handle": args.handle,
+        "status": args.status,
+        "country_codes": country_codes,
+    }
+    if getattr(args, "dry_run", False):
+        output(
+            {
+                "ok": True,
+                "mode": args.command,
+                "dry_run": True,
+                "shop": context["store_domain"],
+                "api_version": context["api_version"],
+                "preview": preview,
+                "query": mutation,
+                "variables": variables,
+            }
+        )
+        return
+    data = graph_ql(context, mutation, variables)
+    payload = data.get("marketCreate") or {}
+    output(
+        {
+            "ok": True,
+            "mode": args.command,
+            "shop": context["store_domain"],
+            "api_version": context["api_version"],
+            "preview": preview,
+            "market": serialize_market_record(payload.get("market") or {}),
+            "user_errors": payload.get("userErrors") or [],
+        }
+    )
+
+
 def command_graphql_query(args: argparse.Namespace) -> None:
     query = read_query_argument(args)
     variables = parse_json_value(args.variables_json, dict, "variables_json") or {}
@@ -1342,6 +2083,31 @@ def main() -> None:
     add_write_flag(product_update)
     product_update.set_defaults(func=command_product_update)
 
+    delivery_profiles_list = subparsers.add_parser("delivery-profiles-list", help="List Shopify delivery profiles")
+    delivery_profiles_list.add_argument("--first", type=int, default=50)
+    delivery_profiles_list.set_defaults(func=command_delivery_profiles_list)
+
+    variants_shippable_list = subparsers.add_parser("variants-shippable-list", help="List shippable variants and optionally compare their delivery profile")
+    variants_shippable_list.add_argument("--first", type=int, default=100)
+    variants_shippable_list.add_argument("--limit", type=int)
+    variants_shippable_list.add_argument("--query")
+    variants_shippable_list.add_argument("--profile-id")
+    variants_shippable_list.add_argument("--profile-name")
+    variants_shippable_list.add_argument("--only-matching", action="store_true")
+    variants_shippable_list.add_argument("--only-mismatched", action="store_true")
+    variants_shippable_list.set_defaults(func=command_variants_shippable_list)
+
+    delivery_profile_assign_variants = subparsers.add_parser("delivery-profile-assign-variants", help="Associate shippable variants to a delivery profile in batches")
+    delivery_profile_assign_variants.add_argument("--profile-id")
+    delivery_profile_assign_variants.add_argument("--profile-name")
+    delivery_profile_assign_variants.add_argument("--variant-id", action="append")
+    delivery_profile_assign_variants.add_argument("--query")
+    delivery_profile_assign_variants.add_argument("--first", type=int, default=100)
+    delivery_profile_assign_variants.add_argument("--limit", type=int)
+    delivery_profile_assign_variants.add_argument("--batch-size", type=int, default=200)
+    add_write_flag(delivery_profile_assign_variants)
+    delivery_profile_assign_variants.set_defaults(func=command_delivery_profile_assign_variants)
+
     inventory_by_sku = subparsers.add_parser("inventory-by-sku", help="Read inventory by SKU")
     inventory_by_sku.add_argument("--sku", action="append", required=True)
     inventory_by_sku.add_argument("--first", type=int, default=20)
@@ -1384,6 +2150,45 @@ def main() -> None:
     customer_update.add_argument("--input-json", required=True)
     add_write_flag(customer_update)
     customer_update.set_defaults(func=command_customer_update)
+
+    markets_list = subparsers.add_parser("markets-list", help="List Shopify markets with assigned country codes")
+    markets_list.add_argument("--first", type=int, default=20)
+    add_write_flag(markets_list)
+    markets_list.set_defaults(func=command_markets_list)
+
+    market_get = subparsers.add_parser("market-get", help="Read one Shopify market by id or exact name")
+    market_get.add_argument("--market-id")
+    market_get.add_argument("--market-name")
+    market_get.set_defaults(func=command_market_get)
+
+    market_create = subparsers.add_parser("market-create", help="Create a Shopify market with assigned country codes")
+    market_create.add_argument("--name", required=True)
+    market_create.add_argument("--handle")
+    market_create.add_argument("--status", choices=["ACTIVE", "DRAFT"], default="DRAFT")
+    market_create.add_argument("--country-code", action="append", required=True)
+    add_write_flag(market_create)
+    market_create.set_defaults(func=command_market_create)
+
+    market_countries_add = subparsers.add_parser("market-countries-add", help="Add country codes to an existing Shopify market")
+    market_countries_add.add_argument("--market-id")
+    market_countries_add.add_argument("--market-name")
+    market_countries_add.add_argument("--country-code", action="append", required=True)
+    add_write_flag(market_countries_add)
+    market_countries_add.set_defaults(func=command_market_countries_update)
+
+    market_countries_ensure = subparsers.add_parser("market-countries-ensure", help="Ensure country codes exist on a Shopify market and skip unsupported ones with a report")
+    market_countries_ensure.add_argument("--market-id")
+    market_countries_ensure.add_argument("--market-name")
+    market_countries_ensure.add_argument("--country-code", action="append", required=True)
+    add_write_flag(market_countries_ensure)
+    market_countries_ensure.set_defaults(func=command_market_countries_ensure)
+
+    market_countries_remove = subparsers.add_parser("market-countries-remove", help="Remove country codes from an existing Shopify market")
+    market_countries_remove.add_argument("--market-id")
+    market_countries_remove.add_argument("--market-name")
+    market_countries_remove.add_argument("--country-code", action="append", required=True)
+    add_write_flag(market_countries_remove)
+    market_countries_remove.set_defaults(func=command_market_countries_update)
 
     graphql_query = subparsers.add_parser("graphql-query", help="Run a raw GraphQL query")
     graphql_query.add_argument("--query")
